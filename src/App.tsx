@@ -1,9 +1,13 @@
+import { Routes, Route } from 'react-router-dom';
+import { LandingPage } from './pages/LandingPage';
+
 function App() {
     return (
-        <h1 className="text-3xl font-bold text-blue-600 p-8">
-            Buyit frontend is alive
-        </h1>
-    )
+        <Routes>
+            {/* "/" is the marketing landing page; its CTAs open the global auth modal. */}
+            <Route path="/" element={<LandingPage />} />
+        </Routes>
+    );
 }
 
-export default App
+export default App;
