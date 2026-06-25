@@ -1,1 +1,58 @@
+/* Google Fonts must precede other rules: Outfit (display) + Plus Jakarta Sans (body) */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
+
+/* ------------------------------------------------------------------ *
+ * Buyit landing — global styles
+ * ------------------------------------------------------------------ */
+
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; padding: 0; }
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #0a0a12;
+  color: #15131f;
+  overflow-x: hidden;
+}
+
+/* Inputs --------------------------------------------------------------*/
+.buyit-input::placeholder { color: rgba(255,255,255,0.36); }
+.lite-input::placeholder  { color: #9b97ad; }
+
+/* Keyframes -----------------------------------------------------------*/
+@keyframes bobA       { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(-10px);} }
+@keyframes bobB       { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(-14px);} }
+@keyframes bobC       { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(-7px);} }
+@keyframes flow       { to { stroke-dashoffset: -200; } }
+@keyframes islandFloat{ 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(-8px);} }
+@keyframes hubPing    { 0%{ transform: scale(.72); opacity:.8; } 100%{ transform: scale(1.55); opacity:0; } }
+@keyframes marquee    { from{ transform: translateX(0);} to{ transform: translateX(-50%);} }
+@keyframes authFade   { from{ opacity:0; transform: translateY(8px);} to{ opacity:1; transform:none;} }
+@keyframes spin       { to { transform: rotate(360deg); } }
+@keyframes drawLine   { from { stroke-dashoffset: 600; } to { stroke-dashoffset: 0; } }
+@keyframes glowPulse  { 0%,100%{ opacity:.5;} 50%{ opacity:.9;} }
+
+.marquee-track { animation: marquee 38s linear infinite; width: max-content; }
+.marquee-track:hover { animation-play-state: paused; }
+
+/* Responsive layout (mirrors the source breakpoints) ------------------*/
+.menu-btn { display: none; }
+@media (max-width: 940px) {
+  .nav-links  { display: none !important; }
+  .menu-btn   { display: inline-flex !important; }
+  .hero-grid  { grid-template-columns: 1fr !important; }
+  .split-grid { grid-template-columns: 1fr !important; }
+  .dash-grid  { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 560px) {
+  .cta-row    { flex-direction: column !important; align-items: stretch !important; }
+  .auth-shell { padding: 0 !important; }
+  .name-row   { grid-template-columns: 1fr !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}
