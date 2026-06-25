@@ -3,8 +3,9 @@ import { useEffect } from 'react';
 /**
  * useLandingMotion — ports the imperative bits of the original design:
  *   1. data-reveal  : staggered fade/slide-in cascade in document order
- *   2. data-count   : count-up number animation (TrustStrip stats)
- *   3. data-depth   : pointer parallax inside the [data-hero] element
+ *   2. data-depth   : pointer parallax inside the [data-hero] element
+ *
+ * (Stat count-up now lives in the reusable <CountUp> component.)
  *
  * Attach the returned ref to the page root. Honours prefers-reduced-motion.
  *
@@ -18,33 +19,6 @@ export function useLandingMotion(rootRef: React.RefObject<HTMLElement | null>) {
     if (!root) return;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    const fmt = (v: number, dec: number, comma: boolean) => {
-      let n = dec > 0 ? v.toFixed(dec) : Math.round(v).toString();
-      if (comma) {
-        const parts = n.split('.');
-        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-        n = parts.join('.');
-      }
-      return n;
-    };
-
-    const animateCount = (el: HTMLElement) => {
-      const target = parseFloat(el.getAttribute('data-count') || '0');
-      const dec = parseInt(el.getAttribute('data-decimals') || '0', 10);
-      const suf = el.getAttribute('data-suffix') || '';
-      const pre = el.getAttribute('data-prefix') || '';
-      const comma = el.getAttribute('data-comma') === '1';
-      if (reduced) { el.textContent = pre + fmt(target, dec, comma) + suf; return; }
-      const dur = 1500, start = performance.now();
-      const step = (now: number) => {
-        let p = Math.min(1, (now - start) / dur);
-        p = 1 - Math.pow(1 - p, 3);
-        el.textContent = pre + fmt(target * p, dec, comma) + suf;
-        if (p < 1) requestAnimationFrame(step);
-      };
-      requestAnimationFrame(step);
-    };
-
     // --- Reveal cascade --------------------------------------------------
     const els = Array.from(root.querySelectorAll<HTMLElement>('[data-reveal]'));
     const timers: number[] = [];
@@ -53,7 +27,6 @@ export function useLandingMotion(rootRef: React.RefObject<HTMLElement | null>) {
       els.forEach((el) => {
         el.style.opacity = '1';
         el.style.transform = 'none';
-        if (el.hasAttribute('data-count')) animateCount(el);
       });
     } else {
       els.forEach((el) => {
@@ -66,7 +39,6 @@ export function useLandingMotion(rootRef: React.RefObject<HTMLElement | null>) {
         const t = window.setTimeout(() => {
           el.style.opacity = '1';
           el.style.transform = 'none';
-          if (el.hasAttribute('data-count')) animateCount(el);
         }, delay);
         timers.push(t);
       };
