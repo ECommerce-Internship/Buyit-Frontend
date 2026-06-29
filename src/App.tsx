@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage';
 import { ProductListingPage } from './pages/ProductListingPage';
+import { GoogleCallbackPage } from './pages/GoogleCallbackPage';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import { AdminRoute } from './routes/AdminRoute';
 import { SellerRoute } from './routes/SellerRoute';
@@ -23,6 +24,8 @@ function App() {
 
             {/* Public: a single product's detail page (TB-59). */}
             <Route path="/products/:id" element={<ProductDetailPage />} />
+            {/* Public: where the backend redirects after Google sign-in (TB-133). */}
+            <Route path="/auth/callback" element={<GoogleCallbackPage />} />
 
             {/* Must be logged in for anything below. (/products is NO LONGER here.) */}
             <Route element={<ProtectedRoute />}>

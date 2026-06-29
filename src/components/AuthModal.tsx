@@ -147,6 +147,17 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
         }
     }
 
+  // TB-133: start the real Google OAuth flow. This is a FULL-PAGE navigation (not Axios) because
+  // Google must take over the top-level browser to show its consent screen and set its cookies.
+  function handleGoogleLogin() {
+    const apiUrl = import.meta.env.VITE_API_URL;
+    if (!apiUrl) {
+      setFormError('Google sign-in is unavailable right now. Please try again later.');
+      return;
+    }
+    window.location.href = `${apiUrl}/api/auth/login/google`;
+  }
+
   const successTitle = isLogin ? 'Welcome back!' : (isSeller ? 'Store created' : 'Account created');
   const successMessage = isLogin
     ? 'You\u2019re signed in. Time to explore the marketplace.'
@@ -211,8 +222,8 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
             <h2 style={{ margin: '0 0 4px', fontFamily: 'Outfit', fontSize: 22, fontWeight: 700, letterSpacing: '-0.01em', color: '#fff' }}>{authHeading}</h2>
             <p style={{ margin: '0 0 20px', fontSize: 13.5, color: 'rgba(255,255,255,0.5)' }}>{authSub}</p>
 
-            {/* MOCKED: Google OAuth — wire to GET {API}/api/auth/login/google */}
-            <Hoverable as="button" onClick={() => { /* mock redirect */ }}
+            {/* TB-133: real Google OAuth — full-page redirect to the backend login endpoint */}
+            <Hoverable as="button" onClick={handleGoogleLogin}
               style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 12, marginBottom: 18, fontFamily: 'inherit', fontSize: 14.5, fontWeight: 600, color: '#fff', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 12, cursor: 'pointer', transition: 'background .15s' }}
               hoverStyle={{ background: 'rgba(255,255,255,0.12)' }}>
               <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.5 12.2c0-.7-.06-1.4-.18-2.06H12v3.9h5.9a5 5 0 0 1-2.18 3.3v2.74h3.52c2.06-1.9 3.26-4.7 3.26-7.88z" /><path fill="#34A853" d="M12 23c2.94 0 5.42-.97 7.22-2.64l-3.52-2.74c-.98.66-2.23 1.05-3.7 1.05-2.85 0-5.26-1.92-6.12-4.5H2.24v2.83A11 11 0 0 0 12 23z" /><path fill="#FBBC05" d="M5.88 14.17a6.6 6.6 0 0 1 0-4.34V7H2.24a11 11 0 0 0 0 9.99z" /><path fill="#EA4335" d="M12 5.16c1.6 0 3.04.55 4.17 1.63l3.12-3.12C17.42 1.9 14.94.9 12 .9A11 11 0 0 0 2.24 7l3.64 2.83C6.74 7.25 9.15 5.16 12 5.16z" /></svg>
