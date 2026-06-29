@@ -23,3 +23,10 @@ export async function fetchProducts(
     );
     return res.data;
 }
+
+// Fetch ONE product by id for the detail page.
+// NOTE: singular "/product/{id}" — the controller's [controller] route token is "Product".
+export async function fetchProductById(id: number): Promise<ProductResponse> {
+    const res = await axiosInstance.get<ProductResponse>(`/api/v1/product/${id}`);
+    return res.data;
+}
