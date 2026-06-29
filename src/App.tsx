@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage';
 import { ProductListingPage } from './pages/ProductListingPage';
+import { GoogleCallbackPage } from './pages/GoogleCallbackPage';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import { AdminRoute } from './routes/AdminRoute';
 import { SellerRoute } from './routes/SellerRoute';
@@ -19,6 +20,9 @@ function App() {
 
             {/* Public: the marketplace catalogue (GET /products is anonymous). */}
             <Route path="/products" element={<ProductListingPage />} />
+
+            {/* Public: where the backend redirects after Google sign-in (TB-133). */}
+            <Route path="/auth/callback" element={<GoogleCallbackPage />} />
 
             {/* Must be logged in for anything below. (/products is NO LONGER here.) */}
             <Route element={<ProtectedRoute />}>
