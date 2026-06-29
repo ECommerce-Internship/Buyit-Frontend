@@ -4,6 +4,7 @@ import { ProductListingPage } from './pages/ProductListingPage';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import { AdminRoute } from './routes/AdminRoute';
 import { SellerRoute } from './routes/SellerRoute';
+import { ProductDetailPage } from './pages/ProductDetailPage';
 
 // TEMP placeholders so the guards are testable NOW. Replace each with the real page
 // in its own ticket (admin dashboard, seller dashboard/TB-139).
@@ -19,6 +20,9 @@ function App() {
 
             {/* Public: the marketplace catalogue (GET /products is anonymous). */}
             <Route path="/products" element={<ProductListingPage />} />
+
+            {/* Public: a single product's detail page (TB-59). */}
+            <Route path="/products/:id" element={<ProductDetailPage />} />
 
             {/* Must be logged in for anything below. (/products is NO LONGER here.) */}
             <Route element={<ProtectedRoute />}>
