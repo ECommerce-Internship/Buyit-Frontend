@@ -1,7 +1,8 @@
 // src/pages/ProductListingPage.tsx
 import { useEffect, useState, type CSSProperties } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import Logo from '../components/Logo';
+import { useAuth } from '../context/AuthContext';
 import type { SortOption } from '../types/product';
 import type { ProductQueryParams } from '../api/products';
 import { useProducts } from '../hooks/useProducts';
@@ -27,6 +28,7 @@ const SORT_LABELS: Record<SortOption, string> = {
 
 export function ProductListingPage() {
     const [searchParams, setSearchParams] = useSearchParams();
+    const { isAuthenticated } = useAuth();
 
     const searchInUrl = searchParams.get('search') ?? '';
     const categoryInUrl = searchParams.get('category') ?? '';
@@ -104,6 +106,11 @@ export function ProductListingPage() {
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4-4" /></svg>
                         <input value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="Search products…" style={{ border: 'none', outline: 'none', background: 'transparent', fontFamily: 'inherit', fontSize: 13.5, color: '#15131f', width: '100%' }} />
                     </div>
+                    {isAuthenticated && (
+                        <Link to="/account" style={{ fontSize: 13.5, fontWeight: 600, color: '#7c5cff', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                            My account
+                        </Link>
+                    )}
                 </div>
             </header>
 
