@@ -32,3 +32,10 @@ export async function getMyStores(): Promise<Store[]> {
     const res = await axiosInstance.get<Store[]>('/api/v1/Stores/mine');
     return res.data;
 }
+
+// ADMIN: list EVERY store (any status). Backed by GET /api/v1/admin/stores (Admin only).
+// Used to populate the store dropdown in the product-create form (TB-65).
+export async function getAllStoresAdmin(): Promise<Store[]> {
+    const res = await axiosInstance.get<Store[]>('/api/v1/admin/stores');
+    return res.data;
+}

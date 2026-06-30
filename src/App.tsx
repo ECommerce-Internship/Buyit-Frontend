@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage';
 import { ProductListingPage } from './pages/ProductListingPage';
 import { GoogleCallbackPage } from './pages/GoogleCallbackPage';
@@ -8,12 +8,10 @@ import { SellerRoute } from './routes/SellerRoute';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { AccountPage } from './pages/AccountPage';
 import { SellerDashboardPage } from './pages/SellerDashboardPage';
-
-// TEMP placeholders so the guards are testable NOW. Replace each with the real page
-// in its own ticket (admin dashboard, seller dashboard/TB-139).
-function Placeholder({ title }: { title: string }) {
-    return <div style={{ padding: 40, fontFamily: 'system-ui' }}>{title}</div>;
-}
+import { AdminProductsPage } from './pages/admin/AdminProductsPage';
+import { AdminOrdersPage } from './pages/admin/AdminOrdersPage';
+import { AdminInventoryPage } from './pages/admin/AdminInventoryPage';
+import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 
 function App() {
     return (
@@ -36,8 +34,14 @@ function App() {
 
                 {/* Logged in AND Admin. */}
                 <Route element={<AdminRoute />}>
-                    <Route path="/admin" element={<Placeholder title="Admin dashboard (TEMP)" />} />
+                    <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+                    <Route path="/admin/products" element={<AdminProductsPage />} />
+                    <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+                    <Route path="/admin/orders" element={<AdminOrdersPage />} />
+                    <Route path="/admin/inventory" element={<AdminInventoryPage />} />
                 </Route>
+
+
 
                 {/* Logged in AND Seller. */}
                 <Route element={<SellerRoute />}>
