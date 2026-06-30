@@ -1,7 +1,7 @@
 // src/pages/ProductDetailPage.tsx
-import { type CSSProperties, type ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { Star } from 'lucide-react';
 import Logo from '../components/Logo';
@@ -14,6 +14,8 @@ import { formatCurrency } from '../lib/format';
 import { StockBadge } from '../components/products/StockBadge';
 import { StarRating } from '../components/products/StarRating';
 import type { ProductResponse, ReviewResponse } from '../types/product';
+import { submitReview, updateReview, deleteReview } from '../api/reviews';
+import { ReviewForm } from '../components/products/ReviewForm';
 
 export function ProductDetailPage() {
     // 1) Read the :id from the URL ("/products/42" -> id === "42"), convert to a number.
@@ -27,12 +29,67 @@ export function ProductDetailPage() {
     // 3) Who is logged in (cart needs a Customer), and how to open the login modal.
     const { isAuthenticated, user } = useAuth();
     const { openAuth } = useAuthModal();
+    // Review state: the cache controller (to refresh after changes) and an "editing my review" flag.
+    const queryClient = useQueryClient();
+    const [editing, setEditing] = useState(false);
+    // Capture "now" ONCE (lazy initializer) so the 48h check below stays pure during render.
+    const [now] = useState(() => Date.now());
+
+    // React reuses this component instance when only the :id param changes (product A -> B),
+    // so leaving edit mode on for product B would be wrong. Reset it the React-sanctioned way:
+    // store the param we rendered for and clear edit mode during render when it changes.
+    // (See react.dev "Adjusting state when a prop changes" — preferred over a setState effect.)
+    const [renderedProductId, setRenderedProductId] = useState(productId);
+    if (productId !== renderedProductId) {
+        setRenderedProductId(productId);
+        setEditing(false);
+    }
 
     // 4) The Add-to-Cart mutation. `isPending` drives the button spinner.
     const addToCart = useMutation({
         mutationFn: () => addCartItem(productId, 1),
         onSuccess: () => toast.success('Added to cart!'),
         onError: () => toast.error('Could not add to cart. Please try again.'),
+    });
+
+    // Refresh BOTH the reviews list AND the product (the product object carries the
+    // averageRating + reviewCount that must update after any review change).
+    const refreshAfterReviewChange = () => {
+        queryClient.invalidateQueries({ queryKey: ['product-reviews', productId] });
+        queryClient.invalidateQueries({ queryKey: ['product', productId] });
+    };
+
+    // CREATE a review.
+    const submit = useMutation({
+        mutationFn: (vars: { rating: number; comment: string | null }) =>
+            submitReview(productId, vars),
+        onSuccess: () => {
+            toast.success('Thanks for your review!');
+            refreshAfterReviewChange();
+        },
+        onError: (err) => toast.error(reviewErrorMessage(err)),
+    });
+
+    // EDIT my review.
+    const edit = useMutation({
+        mutationFn: (vars: { reviewId: number; rating: number; comment: string | null }) =>
+            updateReview(vars.reviewId, { rating: vars.rating, comment: vars.comment }),
+        onSuccess: () => {
+            toast.success('Your review was updated.');
+            setEditing(false);
+            refreshAfterReviewChange();
+        },
+        onError: (err) => toast.error(reviewErrorMessage(err)),
+    });
+
+    // DELETE my review.
+    const remove = useMutation({
+        mutationFn: (reviewId: number) => deleteReview(reviewId),
+        onSuccess: () => {
+            toast.success('Your review was deleted.');
+            refreshAfterReviewChange();
+        },
+        onError: (err) => toast.error(reviewErrorMessage(err)),
     });
 
     function handleAddToCart() {
@@ -85,6 +142,18 @@ export function ProductDetailPage() {
 
     const outOfStock = product.quantityInStock <= 0;
     const reviews = reviewsData?.reviews.items ?? [];
+
+    // Find the logged-in user's own review among the loaded reviews (see Gap #2).
+    const myReview = user ? reviews.find((r) => r.userId === user.id) ?? null : null;
+    // The backend only allows editing within 48 hours of submission. Mirror that here.
+    const FORTY_EIGHT_HOURS_MS = 48 * 60 * 60 * 1000;
+    const canEditMyReview = myReview
+        ? now - new Date(myReview.createdAt).getTime() <= FORTY_EIGHT_HOURS_MS
+        : false;
+    // Everyone else's reviews (so we don't list the user's own review twice).
+    const otherReviews = myReview ? reviews.filter((r) => r.reviewId !== myReview.reviewId) : reviews;
+    // Only logged-in Customers can write/own reviews (the backend restricts POST to Customers).
+    const canWrite = isAuthenticated && user?.role === 'Customer';
 
     return (
         <Shell>
@@ -185,17 +254,88 @@ export function ProductDetailPage() {
                     Reviews{reviewsData ? ` (${reviewsData.totalCount})` : ''}
                 </h2>
 
+                {/* --- Write / manage YOUR review --- */}
+                {canWrite ? (
+                    myReview ? (
+                        editing ? (
+                            <ReviewForm
+                                initialRating={myReview.rating}
+                                initialComment={myReview.comment ?? ''}
+                                submitLabel="Save changes"
+                                pending={edit.isPending}
+                                onSubmit={(rating, comment) =>
+                                    edit.mutate({ reviewId: myReview.reviewId, rating, comment })}
+                                onCancel={() => setEditing(false)}
+                            />
+                        ) : (
+                            <div style={{ background: '#fff', border: '1px solid #eceaf2', borderRadius: 14, padding: '16px 18px', marginTop: 14 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                                    <span style={{ fontWeight: 700, fontSize: 14.5, color: '#15131f' }}>Your review</span>
+                                    <div style={{ display: 'flex', gap: 8 }}>
+                                        {canEditMyReview && (
+                                            <button onClick={() => setEditing(true)} style={smallBtnStyle}>Edit</button>
+                                        )}
+                                        <button
+                                            onClick={() => {
+                                                if (window.confirm('Delete your review? This cannot be undone.')) {
+                                                    remove.mutate(myReview.reviewId);
+                                                }
+                                            }}
+                                            disabled={remove.isPending}
+                                            style={{ ...smallBtnStyle, color: '#c0392b', borderColor: '#f3c7c0' }}
+                                        >
+                                            {remove.isPending ? 'Deleting…' : 'Delete'}
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', gap: 2, margin: '8px 0' }}>
+                                    {[0, 1, 2, 3, 4].map((i) => (
+                                        <Star key={i} size={16}
+                                              fill={i < myReview.rating ? '#f5a524' : 'none'}
+                                              stroke={i < myReview.rating ? '#f5a524' : '#cbc8d6'} />
+                                    ))}
+                                </div>
+                                {myReview.comment && (
+                                    <p style={{ fontSize: 14, lineHeight: 1.6, color: '#46434f', margin: 0 }}>{myReview.comment}</p>
+                                )}
+                                {!canEditMyReview && (
+                                    <p style={{ fontSize: 12, color: '#9a97a8', margin: '8px 0 0' }}>
+                                        The 48-hour edit window has passed — you can still delete it.
+                                    </p>
+                                )}
+                            </div>
+                        )
+                    ) : (
+                        <div style={{ marginTop: 14 }}>
+                            <h3 style={{ ...sectionTitleStyle, fontSize: 15 }}>Write a review</h3>
+                            <ReviewForm
+                                submitLabel="Submit review"
+                                pending={submit.isPending}
+                                onSubmit={(rating, comment) => submit.mutate({ rating, comment })}
+                            />
+                        </div>
+                    )
+                ) : !isAuthenticated ? (
+                    <button onClick={() => openAuth('login', 'buyer')} style={{ ...smallBtnStyle, marginTop: 14 }}>
+                        Log in to write a review
+                    </button>
+                ) : (
+                    <p style={{ color: '#9a97a8', fontSize: 14, marginTop: 14 }}>
+                        Only customer accounts can write reviews.
+                    </p>
+                )}
+
                 {reviewsLoading ? (
                     <p style={{ color: '#9a97a8', fontSize: 15 }}>Loading reviews…</p>
                 ) : reviewsError ? (
                     <p style={{ color: '#c0392b', fontSize: 15 }}>Couldn’t load reviews. Please refresh the page.</p>
-                ) : reviews.length === 0 ? (
+                ) : otherReviews.length === 0 ? (
                     <p style={{ color: '#9a97a8', fontSize: 15 }}>
-                        No reviews yet. Be the first to review this product.
+                        {myReview ? 'No other reviews yet.' : 'No reviews yet. Be the first to review this product.'}
                     </p>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 14 }}>
-                        {reviews.map((r) => <ReviewRow key={r.reviewId} review={r} />)}
+                        {otherReviews.map((r) => <ReviewRow key={r.reviewId} review={r} />)}
                     </div>
                 )}
             </section>
@@ -285,3 +425,15 @@ const addBtnStyle: CSSProperties = { display: 'inline-flex', alignItems: 'center
 const backLinkStyle: CSSProperties = { fontSize: 13.5, fontWeight: 600, color: '#8d6cff', textDecoration: 'none' };
 const retryBtnStyle: CSSProperties = { padding: '9px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#8d6cff,#7c5cff)', color: '#fff', fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 13.5, fontWeight: 700 };
 const crumbStyle: CSSProperties = { color: '#9a97a8', textDecoration: 'none' };
+const smallBtnStyle: CSSProperties = { padding: '6px 12px', borderRadius: 9, border: '1px solid #e2dff0', background: '#fff', color: '#56536a', fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 13, fontWeight: 600, cursor: 'pointer' };
+
+// Turn an Axios error into the backend's human message (see ExceptionHandlingMiddleware).
+// 400 validation errors live in data.errors ({ field: string[] }); everything else in data.detail.
+function reviewErrorMessage(err: unknown): string {
+    const data = (err as { response?: { data?: { detail?: string; errors?: Record<string, string[]> } } })?.response?.data;
+    if (data?.errors) {
+        const first = Object.values(data.errors)[0]?.[0];
+        if (first) return first;
+    }
+    return data?.detail ?? 'Something went wrong. Please try again.';
+}
