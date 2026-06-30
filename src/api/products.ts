@@ -77,6 +77,17 @@ export async function importProducts(file: File): Promise<ImportResult> {
     return res.data;
 }
 
+// TRIGGER an SFTP import. Unlike importProducts(), there is NO file to upload — the backend
+// already knows the configured SFTP path and pulls the spreadsheet itself. Returns the SAME
+// { addedCount, failedCount, errors[] } shape as the Excel import. Admin only.
+// Errors surface as HTTP statuses the caller maps to messages: 502 (SFTP unreachable),
+// 404 (file not found at the configured path), 400 (downloaded file isn't a valid spreadsheet).
+export async function importProductsFromSftp(): Promise<ImportResult> {
+    // POST with no second argument => empty request body, which is exactly what the endpoint wants.
+    const res = await axiosInstance.post<ImportResult>('/api/v1/product/import-from-sftp');
+    return res.data;
+}
+
 // GENERATE AI marketing content for an existing product. Admin only.
 // Returns a SUGGESTION (not saved). `specs` is free text describing the product.
 export async function generateProductContent(

@@ -4,7 +4,7 @@ import type { CSSProperties } from 'react';
 import toast from 'react-hot-toast';
 import { useProducts } from '../../hooks/useProducts';
 import { useDebounce } from '../../hooks/useDebounce';
-import { useDeleteProduct, useImportProducts } from '../../hooks/useProductMutations';
+import { useDeleteProduct, useImportProducts, useImportFromSftp } from '../../hooks/useProductMutations';
 import { Pagination } from '../../components/products/Pagination';
 import { formatCurrency, stockLevel, STOCK_LABEL } from '../../lib/format';
 import type { ProductResponse, ImportResult } from '../../types/product';
@@ -47,12 +47,30 @@ export function AdminProductsPage() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [importResult, setImportResult] = useState<ImportResult | null>(null);
 
+    // A 200 means the import RAN — not that anything was added. Open the result modal and pick a
+    // toast that matches the real outcome: error if nothing was added, neutral if partial, green
+    // only on a clean run. `sourceSuffix` is '' for Excel and ' from SFTP' for the SFTP trigger.
+    function announceImport(result: ImportResult, sourceSuffix: string) {
+        setImportResult(result);
+        setImportResultOpen(true);
+        if (result.addedCount === 0) {
+            toast.error(`No products imported${sourceSuffix} — ${result.failedCount} row(s) failed.`);
+        } else if (result.failedCount > 0) {
+            toast(`Imported ${result.addedCount} product(s)${sourceSuffix}, ${result.failedCount} failed.`);
+        } else {
+            toast.success(`Imported ${result.addedCount} product(s)${sourceSuffix}.`);
+        }
+    }
+
     const importMut = useImportProducts({
-        onSuccess: (result) => {
-            setImportResult(result);
-            setImportResultOpen(true);
-            toast.success(`Imported ${result.addedCount} product(s).`);
-        },
+        onSuccess: (result) => announceImport(result, ''),
+        onError: (m) => toast.error(m),
+    });
+
+    // SFTP import: no file picker — the backend pulls the configured file itself.
+    // On success we reuse the SAME result popup the Excel import uses.
+    const sftpMut = useImportFromSftp({
+        onSuccess: (result) => announceImport(result, ' from SFTP'),
         onError: (m) => toast.error(m),
     });
 
@@ -117,14 +135,23 @@ export function AdminProductsPage() {
                         }}>
                         + Add Product
                     </button>
-                    <button onClick={() => fileInputRef.current?.click()} disabled={importMut.isPending}
+                    <button onClick={() => fileInputRef.current?.click()} disabled={importMut.isPending || sftpMut.isPending}
                         style={{
                             padding: '11px 18px', fontFamily: 'inherit', fontSize: 14.5, fontWeight: 600,
                             color: '#fff', background: 'rgba(255,255,255,0.06)',
                             border: '1px solid rgba(255,255,255,0.14)', borderRadius: 12,
-                            cursor: importMut.isPending ? 'wait' : 'pointer',
+                            cursor: (importMut.isPending || sftpMut.isPending) ? 'wait' : 'pointer',
                         }}>
                         {importMut.isPending ? 'Importing…' : 'Import Excel'}
+                    </button>
+                    <button onClick={() => sftpMut.mutate()} disabled={importMut.isPending || sftpMut.isPending}
+                        style={{
+                            padding: '11px 18px', fontFamily: 'inherit', fontSize: 14.5, fontWeight: 600,
+                            color: '#fff', background: 'rgba(255,255,255,0.06)',
+                            border: '1px solid rgba(255,255,255,0.14)', borderRadius: 12,
+                            cursor: (importMut.isPending || sftpMut.isPending) ? 'wait' : 'pointer',
+                        }}>
+                        {sftpMut.isPending ? 'Importing…' : 'Import from SFTP'}
                     </button>
                     {/* The hidden picker. accept= filters the OS dialog to .xlsx files. */}
                     <input ref={fileInputRef} type="file" accept=".xlsx" onChange={onPickFile} style={{ display: 'none' }} />
