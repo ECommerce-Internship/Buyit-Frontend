@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage';
 import { ProductListingPage } from './pages/ProductListingPage';
 import { GoogleCallbackPage } from './pages/GoogleCallbackPage';
+import { CartPage } from './pages/CartPage';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import { AdminRoute } from './routes/AdminRoute';
 import { SellerRoute } from './routes/SellerRoute';
@@ -30,9 +31,13 @@ function App() {
             <Route path="/auth/callback" element={<GoogleCallbackPage />} />
 
             {/* Must be logged in for anything below. (/products is NO LONGER here.) */}
+            {/* Must be logged in for anything below. */}
             <Route element={<ProtectedRoute />}>
                 {/* Logged in (any role): your own account/profile (TB-134). */}
                 <Route path="/account" element={<AccountPage />} />
+
+                {/* Logged-in user cart. */}
+                <Route path="/cart" element={<CartPage />} />
 
                 {/* Logged in AND Admin. */}
                 <Route element={<AdminRoute />}>
