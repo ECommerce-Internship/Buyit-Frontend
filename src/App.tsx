@@ -7,6 +7,7 @@ import { AdminRoute } from './routes/AdminRoute';
 import { SellerRoute } from './routes/SellerRoute';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { AccountPage } from './pages/AccountPage';
+import { SellerDashboardPage } from './pages/SellerDashboardPage';
 
 // TEMP placeholders so the guards are testable NOW. Replace each with the real page
 // in its own ticket (admin dashboard, seller dashboard/TB-139).
@@ -40,7 +41,7 @@ function App() {
 
                 {/* Logged in AND Seller. */}
                 <Route element={<SellerRoute />}>
-                    <Route path="/seller" element={<Placeholder title="Seller dashboard (TEMP)" />} />
+                    <Route path="/seller" element={<SellerDashboardPage />} />
                 </Route>
             </Route>
         </Routes>
