@@ -7,6 +7,7 @@ const TABS = [
     { to: '/admin/orders', label: 'Orders' },
     { to: '/admin/inventory', label: 'Inventory' },
     { to: '/admin/products', label: 'Products' }, // from TB-65
+    { to: '/admin/payments', label: 'Payments' }, // from TB-136
 ];
 
 export function AdminTabs() {

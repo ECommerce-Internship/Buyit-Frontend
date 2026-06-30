@@ -12,6 +12,7 @@ import { AdminProductsPage } from './pages/admin/AdminProductsPage';
 import { AdminOrdersPage } from './pages/admin/AdminOrdersPage';
 import { AdminInventoryPage } from './pages/admin/AdminInventoryPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
+import { AdminPaymentsPage } from './pages/admin/AdminPaymentsPage';
 
 function App() {
     return (
@@ -39,6 +40,7 @@ function App() {
                     <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
                     <Route path="/admin/orders" element={<AdminOrdersPage />} />
                     <Route path="/admin/inventory" element={<AdminInventoryPage />} />
+                    <Route path="/admin/payments" element={<AdminPaymentsPage />} />
                 </Route>
 
 
