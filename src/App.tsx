@@ -6,6 +6,7 @@ import { ProtectedRoute } from './routes/ProtectedRoute';
 import { AdminRoute } from './routes/AdminRoute';
 import { SellerRoute } from './routes/SellerRoute';
 import { ProductDetailPage } from './pages/ProductDetailPage';
+import { AccountPage } from './pages/AccountPage';
 
 // TEMP placeholders so the guards are testable NOW. Replace each with the real page
 // in its own ticket (admin dashboard, seller dashboard/TB-139).
@@ -29,6 +30,9 @@ function App() {
 
             {/* Must be logged in for anything below. (/products is NO LONGER here.) */}
             <Route element={<ProtectedRoute />}>
+                {/* Logged in (any role): your own account/profile (TB-134). */}
+                <Route path="/account" element={<AccountPage />} />
+
                 {/* Logged in AND Admin. */}
                 <Route element={<AdminRoute />}>
                     <Route path="/admin" element={<Placeholder title="Admin dashboard (TEMP)" />} />
