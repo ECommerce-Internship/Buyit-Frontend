@@ -4,6 +4,7 @@ import { Hoverable } from './ui/Hoverable';
 import type { AuthMode, AuthRole } from '../types/landing';
 import axios from 'axios';
 import axiosInstance from '../api/axiosInstance';
+import { registerSeller, becomeSeller } from '../api/stores';
 import { useAuth } from '../context/AuthContext';
 import type { AuthResponse } from '../types/auth';
 import buyitIcon from '../assets/buyit-icon.png';
@@ -76,7 +77,7 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showPass, setShowPass] = useState(false);
-  const { login } = useAuth(); // AuthContext.login() — stores token + user after a real auth call
+  const { login, user, isAuthenticated } = useAuth(); // login() stores token + user after a real auth call
 
   // Esc to close.
   useEffect(() => {
@@ -88,6 +89,10 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
   const isLogin = mode === 'login';
   const isRegister = mode === 'register';
   const isSeller = role === 'seller';
+  // A logged-in user on the seller sign-up tab is UPGRADING an existing account (TB-139),
+  // not creating a new one: we already know their identity, so we only ask for store details
+  // and call become-seller instead of register-seller.
+  const isSellerUpgrade = isRegister && isSeller && isAuthenticated;
   const score = strengthScore(password);
 
   const resetMsgs = () => { setErrors({}); setFormError(''); };
@@ -95,6 +100,12 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
 
   function validate(): Errors {
     const e: Errors = {};
+    // When a logged-in customer is upgrading, we only need the store name — their email,
+    // password and name already exist, so those fields aren't shown and aren't validated.
+    if (isSellerUpgrade) {
+      if (!storeName.trim()) e.storeName = 'Store name is required.';
+      return e;
+    }
     if (!email.trim()) e.email = 'Email is required.';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) e.email = 'Enter a valid email.';
     if (!password) e.password = 'Password is required.';
@@ -107,18 +118,36 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
     return e;
   }
 
-    // TB-56: wire login + buyer registration to the real backend. The seller path (TB-139) and the
-    // Google button (SSO ticket) are intentionally left mocked — they are not part of this ticket.
+    // TB-56 wired login + buyer registration; TB-139 wires the real seller path. The Google
+    // button (SSO ticket) is intentionally left mocked — it is not part of these tickets.
     async function submit(ev: FormEvent) {
         ev.preventDefault();
         const e = validate();
         if (Object.keys(e).length) { setErrors(e); setFormError('Please fix the highlighted fields.'); return; }
         setErrors({}); setFormError(''); setLoading(true);
 
-        // Seller onboarding creates a store and belongs to TB-139 — keep the original mock for now.
+        // TB-139: real seller onboarding. Two shapes, same outcome (logged in as a Seller with a
+        // Pending store): a brand-new visitor REGISTERS (register-seller); a logged-in customer
+        // UPGRADES (become-seller). Both return an AuthResponse, so login(...) stores the token
+        // and AuthContext redirects the Seller to /seller. We only send a description when typed.
         if (isRegister && isSeller) {
-            setTimeout(() => { setLoading(false); setSuccess(true); }, 1500);
-            return;
+            const desc = storeDescription.trim() ? { storeDescription: storeDescription.trim() } : {};
+            try {
+                const data = isSellerUpgrade
+                    ? await becomeSeller({ storeName, ...desc })
+                    : await registerSeller({ firstName, lastName, email, password, storeName, ...desc });
+                login(data);      // store tokens + user; AuthContext redirects a Seller to /seller
+                setSuccess(true); // show the existing "Store created — Pending review" success panel
+            } catch (err) {
+                // Backend errors are RFC-7807 ProblemDetails; the human message is in `detail`.
+                const message = axios.isAxiosError<{ detail?: string }>(err)
+                    ? err.response?.data?.detail ?? 'Something went wrong. Please try again.'
+                    : 'Something went wrong. Please try again.';
+                setFormError(message);
+            } finally {
+                setLoading(false); // stop the spinner whether we succeeded or failed
+            }
+            return; // don't fall through into the buyer/login code below
         }
 
         try {
@@ -146,6 +175,17 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
             setLoading(false); // turn the button's spinner off whether we succeeded or failed
         }
     }
+
+  // TB-133: start the real Google OAuth flow. This is a FULL-PAGE navigation (not Axios) because
+  // Google must take over the top-level browser to show its consent screen and set its cookies.
+  function handleGoogleLogin() {
+    const apiUrl = import.meta.env.VITE_API_URL;
+    if (!apiUrl) {
+      setFormError('Google sign-in is unavailable right now. Please try again later.');
+      return;
+    }
+    window.location.href = `${apiUrl}/api/auth/login/google`;
+  }
 
   const successTitle = isLogin ? 'Welcome back!' : (isSeller ? 'Store created' : 'Account created');
   const successMessage = isLogin
@@ -211,8 +251,8 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
             <h2 style={{ margin: '0 0 4px', fontFamily: 'Outfit', fontSize: 22, fontWeight: 700, letterSpacing: '-0.01em', color: '#fff' }}>{authHeading}</h2>
             <p style={{ margin: '0 0 20px', fontSize: 13.5, color: 'rgba(255,255,255,0.5)' }}>{authSub}</p>
 
-            {/* MOCKED: Google OAuth — wire to GET {API}/api/auth/login/google */}
-            <Hoverable as="button" onClick={() => { /* mock redirect */ }}
+            {/* TB-133: real Google OAuth — full-page redirect to the backend login endpoint */}
+            <Hoverable as="button" onClick={handleGoogleLogin}
               style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 12, marginBottom: 18, fontFamily: 'inherit', fontSize: 14.5, fontWeight: 600, color: '#fff', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 12, cursor: 'pointer', transition: 'background .15s' }}
               hoverStyle={{ background: 'rgba(255,255,255,0.12)' }}>
               <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.5 12.2c0-.7-.06-1.4-.18-2.06H12v3.9h5.9a5 5 0 0 1-2.18 3.3v2.74h3.52c2.06-1.9 3.26-4.7 3.26-7.88z" /><path fill="#34A853" d="M12 23c2.94 0 5.42-.97 7.22-2.64l-3.52-2.74c-.98.66-2.23 1.05-3.7 1.05-2.85 0-5.26-1.92-6.12-4.5H2.24v2.83A11 11 0 0 0 12 23z" /><path fill="#FBBC05" d="M5.88 14.17a6.6 6.6 0 0 1 0-4.34V7H2.24a11 11 0 0 0 0 9.99z" /><path fill="#EA4335" d="M12 5.16c1.6 0 3.04.55 4.17 1.63l3.12-3.12C17.42 1.9 14.94.9 12 .9A11 11 0 0 0 2.24 7l3.64 2.83C6.74 7.25 9.15 5.16 12 5.16z" /></svg>
@@ -227,7 +267,15 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
 
             {/* `key` remounts the form when switching mode/role, matching the source's formKey */}
             <form onSubmit={submit} noValidate key={`${mode}-${role}`} style={{ animation: 'authFade .3s ease' }}>
-              {isRegister && (
+              {/* Logged-in customer upgrading: skip identity fields, show who's being upgraded. */}
+              {isSellerUpgrade && (
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9, marginBottom: 16, padding: '11px 13px', borderRadius: 12, background: 'rgba(139,108,255,0.1)', border: '1px solid rgba(139,108,255,0.28)' }}>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#b9a9ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none', marginTop: 1 }}><path d="M20 6 9 17l-5-5" /></svg>
+                  <span style={{ fontSize: 12.5, lineHeight: 1.45, color: '#cbbcff' }}>Upgrading <strong style={{ color: '#e3dbff' }}>{user?.email}</strong> to a seller account — just name your first store below.</span>
+                </div>
+              )}
+
+              {isRegister && !isSellerUpgrade && (
                 <div className="name-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div>
                     <label htmlFor="af-first" style={labelStyle}>First name</label>
@@ -246,6 +294,7 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
                 </div>
               )}
 
+              {!isSellerUpgrade && (
               <div>
                 <label htmlFor="af-email" style={labelStyle}>Email</label>
                 <Hoverable as="input" id="af-email" className="buyit-input" type="email" value={email}
@@ -253,7 +302,9 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
                   placeholder="you@example.com" style={fieldStyle(!!errors.email)} focusStyle={focusStyle} />
                 <FieldError msg={errors.email} />
               </div>
+              )}
 
+              {!isSellerUpgrade && (
               <div>
                 <label htmlFor="af-pass" style={labelStyle}>Password</label>
                 <div style={{ position: 'relative' }}>
@@ -281,6 +332,7 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
                 )}
                 <FieldError msg={errors.password} />
               </div>
+              )}
 
               {/* Buyer-only phone */}
               {isRegister && !isSeller && (
@@ -350,6 +402,18 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
                 {isLogin ? 'Create an account' : 'Sign in'}
               </button>
             </p>
+
+            {/* TB-139: secondary "become a seller" entry point — hidden when already on the seller tab. */}
+            {!isSeller && (
+              <p style={{ margin: '10px 0 0', textAlign: 'center', fontSize: 13 }}>
+                <button
+                  onClick={() => { setMode('register'); setRole('seller'); resetMsgs(); }}
+                  style={{ background: 'none', border: 'none', padding: 0, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#ff9a4c' }}
+                >
+                  Want to sell? Become a seller &rarr;
+                </button>
+              </p>
+            )}
           </div>
         )}
       </div>

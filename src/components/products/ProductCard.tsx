@@ -8,8 +8,8 @@ import { StarRating } from './StarRating';
 export function ProductCard({ product }: { product: ProductResponse }) {
     return (
         <div className="bcard" style={{ position: 'relative', width: '100%', background: '#fff', border: '1px solid #eceaf2', borderRadius: 16, overflow: 'hidden', fontFamily: "'Plus Jakarta Sans',sans-serif", display: 'flex', flexDirection: 'column', boxShadow: '0 1px 2px rgba(21,19,31,.04)' }}>
-            {/* image or gray placeholder */}
-            <div style={{ position: 'relative', width: '100%', aspectRatio: '1/1', background: 'radial-gradient(circle at 50% 30%, #fbfaff, #efebf8)', borderBottom: '1px solid #eceaf2', overflow: 'hidden' }}>
+            {/* image — links to the product detail page (TB-59) */}
+            <Link to={`/products/${product.id}`} aria-label={product.name} style={{ display: 'block', position: 'relative', width: '100%', aspectRatio: '1/1', background: 'radial-gradient(circle at 50% 30%, #fbfaff, #efebf8)', borderBottom: '1px solid #eceaf2', overflow: 'hidden' }}>
                 {product.imageUrl ? (
                     <img src={product.imageUrl} alt={product.name} loading="lazy" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
@@ -19,12 +19,12 @@ export function ProductCard({ product }: { product: ProductResponse }) {
                         </svg>
                     </div>
                 )}
-            </div>
+            </Link>
             {/* body */}
             <div style={{ padding: '15px 16px 16px', display: 'flex', flexDirection: 'column', gap: 9 }}>
-                <div style={{ fontFamily: "'Outfit',sans-serif", fontWeight: 600, fontSize: 15.5, lineHeight: 1.3, color: '#15131f', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', minHeight: 40 }}>
+                <Link to={`/products/${product.id}`} style={{ fontFamily: "'Outfit',sans-serif", fontWeight: 600, fontSize: 15.5, lineHeight: 1.3, color: '#15131f', textDecoration: 'none', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', minHeight: 40 }}>
                     {product.name}
-                </div>
+                </Link>
                 <Link to={`/stores/${product.storeSlug}`} style={{ fontSize: 13, fontWeight: 500, color: '#8d6cff', textDecoration: 'none', width: 'fit-content' }}>
                     Sold by {product.storeName}
                 </Link>

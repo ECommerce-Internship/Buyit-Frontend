@@ -52,3 +52,30 @@ export type SortOption =
     | 'price_asc'   // Price Low–High
     | 'price_desc'  // Price High–Low
     | 'newest';     // Newest first
+
+// One review exactly as GET /api/v1/products/{id}/reviews returns it
+// (inside the `reviews.items[]` array). Field names match the backend JSON.
+export interface ReviewResponse {
+    reviewId: number;
+    productId: number;
+    userId: number;
+    reviewerName: string;   // a display name only — never the whole user
+    rating: number;         // 1–5
+    comment: string | null; // a star-only review has no text -> null
+    createdAt: string;      // ISO date string, e.g. "2026-06-20T14:03:00Z"
+}
+// The body the browser sends to CREATE (POST) or EDIT (PUT) a review.
+// Mirrors the backend record SubmitReviewRequest(int Rating, string? Comment).
+// rating: required integer 1-5.  comment: optional, max 1000 chars, or null (star-only).
+export interface SubmitReviewBody {
+    rating: number;
+    comment: string | null;
+}
+
+// The full payload of GET /api/v1/products/{id}/reviews.
+// `reviews` reuses the same PaginatedResult<T> shape already defined above.
+export interface ProductReviewsResponse {
+    averageRating: number;
+    totalCount: number;
+    reviews: PaginatedResult<ReviewResponse>;
+}

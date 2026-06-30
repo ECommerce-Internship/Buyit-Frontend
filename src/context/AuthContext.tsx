@@ -8,11 +8,14 @@ import {
     type ReactNode,
 } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import axiosInstance from '../api/axiosInstance';
 import { tokenStore } from '../api/tokenStore';
 import { storeIdsFromToken } from '../lib/jwt';
 import { redirectPathForRole, toRole, LOGIN_PATH } from '../lib/authRoutes';
 import type { AuthResponse, AuthUser } from '../types/auth';
+
+
 
 // The shape of everything the context hands to the rest of the app.
 interface AuthContextType {
@@ -22,6 +25,7 @@ interface AuthContextType {
     isAuthenticated: boolean;
     login: (data: AuthResponse) => void;
     logout: () => Promise<void>;
+    updateUser: (partial: Partial<AuthUser>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,19 +46,23 @@ function toAuthUser(data: AuthResponse): AuthUser {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
 
     // The session — in MEMORY only. A page reload wipes this (the in-memory trade-off).
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [refreshToken, setRefreshToken] = useState<string | null>(null);
     const [user, setUser] = useState<AuthUser | null>(null);
 
-    // Clear everything locally (used by logout and by refresh-failure).
+    // Clear everything locally (used by logout and by refresh-failure). Also drop all
+    // cached server state so one user's data (e.g. the ['me'] profile) can't bleed into
+    // the next session in the same SPA. (Review finding #3 — CWE-525.)
     const clearSession = useCallback(() => {
         setAccessToken(null);
         setRefreshToken(null);
         setUser(null);
         tokenStore.setTokens(null, null);
-    }, []);
+        queryClient.clear();
+    }, [queryClient]);
 
     // Called after a successful login/register (AuthModal already calls this with res.data).
     const login = useCallback(
@@ -68,6 +76,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
         [navigate],
     );
+
+    // Patch a few fields of the logged-in user (e.g. after a profile save) without re-login.
+    const updateUser = useCallback((partial: Partial<AuthUser>) => {
+        setUser((prev) => (prev ? { ...prev, ...partial } : prev));
+    }, []);
 
     // Revoke the refresh token on the server, then clear local state no matter what.
     const logout = useCallback(async () => {
@@ -119,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 isAuthenticated: accessToken !== null,
                 login,
                 logout,
+                updateUser,
             }}
         >
             {children}
