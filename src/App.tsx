@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage';
 import { ProductListingPage } from './pages/ProductListingPage';
+import { CartPage } from './pages/CartPage';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import { AdminRoute } from './routes/AdminRoute';
 import { SellerRoute } from './routes/SellerRoute';
@@ -20,8 +21,11 @@ function App() {
             {/* Public: the marketplace catalogue (GET /products is anonymous). */}
             <Route path="/products" element={<ProductListingPage />} />
 
-            {/* Must be logged in for anything below. (/products is NO LONGER here.) */}
+            {/* Must be logged in for anything below. */}
             <Route element={<ProtectedRoute />}>
+                {/* Logged-in user cart. */}
+                <Route path="/cart" element={<CartPage />} />
+
                 {/* Logged in AND Admin. */}
                 <Route element={<AdminRoute />}>
                     <Route path="/admin" element={<Placeholder title="Admin dashboard (TEMP)" />} />
