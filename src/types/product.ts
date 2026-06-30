@@ -64,6 +64,13 @@ export interface ReviewResponse {
     comment: string | null; // a star-only review has no text -> null
     createdAt: string;      // ISO date string, e.g. "2026-06-20T14:03:00Z"
 }
+// The body the browser sends to CREATE (POST) or EDIT (PUT) a review.
+// Mirrors the backend record SubmitReviewRequest(int Rating, string? Comment).
+// rating: required integer 1-5.  comment: optional, max 1000 chars, or null (star-only).
+export interface SubmitReviewBody {
+    rating: number;
+    comment: string | null;
+}
 
 // The full payload of GET /api/v1/products/{id}/reviews.
 // `reviews` reuses the same PaginatedResult<T> shape already defined above.
