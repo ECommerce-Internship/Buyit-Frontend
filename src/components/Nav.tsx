@@ -51,6 +51,14 @@ export function Nav() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Hoverable
             as="button"
+            onClick={() => openAuth('register', 'seller')}
+            style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.82)', fontFamily: 'inherit', fontSize: 14.5, fontWeight: 600, cursor: 'pointer', padding: '9px 8px' }}
+            hoverStyle={{ color: '#fff' }}
+          >
+            Sell on Buyit
+          </Hoverable>
+          <Hoverable
+            as="button"
             onClick={() => openAuth('login', 'buyer')}
             style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.82)', fontFamily: 'inherit', fontSize: 14.5, fontWeight: 600, cursor: 'pointer', padding: '9px 8px' }}
             hoverStyle={{ color: '#fff' }}
@@ -84,6 +92,12 @@ export function Nav() {
               {l.label}
             </a>
           ))}
+          <button
+            onClick={() => { setMobileMenu(false); openAuth('register', 'seller'); }}
+            style={{ textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: '11px 6px', fontFamily: 'inherit', fontSize: 15, fontWeight: 600, color: '#ff9a4c' }}
+          >
+            Sell on Buyit
+          </button>
         </div>
       )}
     </nav>

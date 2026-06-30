@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Hoverable } from './ui/Hoverable';
+import { useAuthModal } from '../context/AuthModalContext';
 import buyitIcon from '../assets/buyit-icon.png';
 import buyitWordmark from '../assets/buyit-wordmark.png';
 
@@ -14,6 +15,7 @@ const COLS = [
 ];
 
 export function Footer() {
+  const { openAuth } = useAuthModal();
   const [newsletter, setNewsletter] = useState('');
   const [done, setDone] = useState(false);
 
@@ -43,7 +45,19 @@ export function Footer() {
             <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.85)', marginBottom: 16 }}>{col.title}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
               {col.links.map(([href, label], i) => (
-                <Hoverable as="a" key={i} href={href} style={footerLink} hoverStyle={{ color: '#fff' }}>{label}</Hoverable>
+                label === 'Open a store' ? (
+                  <Hoverable
+                    as="button"
+                    key={i}
+                    onClick={() => openAuth('register', 'seller')}
+                    style={{ ...footerLink, background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}
+                    hoverStyle={{ color: '#fff' }}
+                  >
+                    {label}
+                  </Hoverable>
+                ) : (
+                  <Hoverable as="a" key={i} href={href} style={footerLink} hoverStyle={{ color: '#fff' }}>{label}</Hoverable>
+                )
               ))}
             </div>
           </div>

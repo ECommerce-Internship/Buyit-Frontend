@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 import Logo from '../components/Logo';
 import { useAuth } from '../context/AuthContext';
+import { useAuthModal } from '../context/AuthModalContext';
 import { getMe, updateProfile, changePassword } from '../api/auth';
 
 // Read a backend ProblemDetails message (`detail`), falling back to a generic line.
@@ -17,6 +18,7 @@ function errorMessage(err: unknown, fallback: string): string {
 export function AccountPage() {
     const queryClient = useQueryClient();
     const { updateUser, logout } = useAuth();
+    const { openAuth } = useAuthModal();
 
     // ---- load the profile ----
     const { data: profile, isLoading, isError } = useQuery({ queryKey: ['me'], queryFn: getMe });
@@ -198,6 +200,20 @@ export function AccountPage() {
                                 </form>
                             )}
                         </section>
+
+                        {/* ---------- Become a seller (customers only) — TB-139 ---------- */}
+                        {profile.role === 'Customer' && (
+                            <section style={{ ...cardStyle, marginTop: 24 }}>
+                                <h2 style={cardTitleStyle}>Sell on Buyit</h2>
+                                <p style={{ color: '#6b6878', fontSize: 14.5, lineHeight: 1.6, margin: '0 0 16px' }}>
+                                    Turn your account into a seller account and open your first store. New stores start
+                                    as <strong>Pending</strong> until an admin approves them.
+                                </p>
+                                <button type="button" onClick={() => openAuth('register', 'seller')} style={primaryBtnStyle}>
+                                    Become a seller
+                                </button>
+                            </section>
+                        )}
                     </>
                 )}
             </main>
