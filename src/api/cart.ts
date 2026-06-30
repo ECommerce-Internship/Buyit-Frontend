@@ -1,10 +1,5 @@
 import axiosInstance from './axiosInstance';
 
-// Add a product to the logged-in customer's cart.
-// Requires an authenticated CUSTOMER (the backend cart controller is
-// [Authorize(Roles = "Customer")]). The shared axiosInstance attaches the token.
-export async function addCartItem(productId: number, quantity: number): Promise<void> {
-    await axiosInstance.post('/api/v1/cart/items', { productId, quantity });
 export interface CartItem {
     productId: number;
     productName: string;
@@ -52,4 +47,14 @@ export async function applyCoupon(code: string): Promise<Cart> {
 export async function removeCoupon(): Promise<Cart> {
     const res = await axiosInstance.delete<Cart>('/api/v1/cart/coupon');
     return res.data;
+}
+
+// Add a product to the logged-in customer's cart.
+// Requires an authenticated CUSTOMER.
+// The backend cart controller gets the userId from the token.
+export async function addCartItem(productId: number, quantity: number): Promise<void> {
+    await axiosInstance.post('/api/v1/cart/items', {
+        productId,
+        quantity,
+    });
 }
