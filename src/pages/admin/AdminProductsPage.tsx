@@ -178,7 +178,8 @@ export function AdminProductsPage() {
                                         <td style={{ ...td, textAlign: 'right', whiteSpace: 'nowrap' }}>
                                             <button style={smallBtn} onClick={() => setEditing(p)}>Edit</button>
                                             <button style={{ ...smallBtn, color: '#ff8fa3', marginLeft: 8 }}
-                                                onClick={() => onDelete(p)} disabled={del.isPending}>
+                                                onClick={() => onDelete(p)}
+                                                disabled={del.isPending && del.variables === p.id}>
                                                 Delete
                                             </button>
                                         </td>
