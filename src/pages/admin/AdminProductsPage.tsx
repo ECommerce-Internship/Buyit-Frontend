@@ -10,6 +10,7 @@ import { formatCurrency, stockLevel, STOCK_LABEL } from '../../lib/format';
 import type { ProductResponse, ImportResult } from '../../types/product';
 import { ProductFormModal } from './ProductFormModal';
 import { ImportResultModal } from './ImportResultModal';
+import { AdminTabs } from '../../components/admin/AdminTabs';
 
 const PAGE_SIZE = 10;
 
@@ -105,7 +106,7 @@ export function AdminProductsPage() {
     const items = data?.items ?? [];
 
     return (
-        <main style={{ minHeight: '100vh', background: '#0a0a12', color: '#fff', padding: '40px 24px' }}>
+        <main className="admin-shell" style={{ minHeight: '100vh', color: '#fff', padding: '40px 24px', position: 'relative' }}>
             <div style={{ maxWidth: 1100, margin: '0 auto' }}>
                 <h1 style={{ fontFamily: 'Outfit', fontSize: 30, fontWeight: 700, margin: '0 0 6px' }}>
                     Products
@@ -113,6 +114,8 @@ export function AdminProductsPage() {
                 <p style={{ margin: '0 0 24px', color: 'rgba(255,255,255,0.6)' }}>
                     Manage the catalogue: create, edit, delete, upload images, and bulk-import.
                 </p>
+
+                <AdminTabs />
 
                 {/* TOOLBAR */}
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginBottom: 18 }}>
@@ -248,8 +251,12 @@ export function AdminProductsPage() {
 
 // ---- shared inline styles (this project styles with inline objects, see SellerDashboardPage) ----
 const panel: CSSProperties = {
-    padding: 18, borderRadius: 16, background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(255,255,255,0.09)', marginBottom: 18,
+    padding: 18, borderRadius: 16,
+    background: 'linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.035))',
+    border: '1px solid rgba(255,255,255,0.11)',
+    boxShadow: '0 18px 40px -24px rgba(5,3,20,0.9), inset 0 1px 0 rgba(255,255,255,0.07)',
+    backdropFilter: 'blur(8px)',
+    marginBottom: 18,
 };
 const th: CSSProperties = { padding: '12px 14px', fontWeight: 600, fontSize: 12.5, textTransform: 'uppercase', letterSpacing: 0.4 };
 const td: CSSProperties = { padding: '10px 14px', verticalAlign: 'middle' };

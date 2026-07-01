@@ -68,7 +68,7 @@ export function AdminStoresPage() {
     }, [confirm, busy]);
 
     return (
-        <main style={page_}>
+        <main className="admin-shell" style={page_}>
             <div style={{ maxWidth: 1100, margin: '0 auto' }}>
                 <h1 style={h1}>Stores</h1>
                 <p style={subtitle}>Approve new shops, reject bad applications, and suspend or re-approve live stores.</p>
@@ -228,13 +228,17 @@ function StatusBadge({ status }: { status: StoreStatus }) {
 }
 
 // ---- inline styles (copied from AdminPaymentsPage so all admin tabs look identical) ----
-const page_: CSSProperties = { minHeight: '100vh', background: '#0a0a12', color: '#fff', padding: '40px 24px' };
+const page_: CSSProperties = { minHeight: '100vh', color: '#fff', padding: '40px 24px', position: 'relative' };
 const h1: CSSProperties = { fontFamily: 'Outfit', fontSize: 30, fontWeight: 700, margin: '0 0 6px' };
 const h2: CSSProperties = { fontFamily: 'Outfit', fontSize: 19, fontWeight: 700, margin: '8px 0 14px' };
 const subtitle: CSSProperties = { margin: '0 0 24px', color: 'rgba(255,255,255,0.6)' };
 const panel: CSSProperties = {
-    padding: 18, borderRadius: 16, background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(255,255,255,0.09)', marginBottom: 18,
+    padding: 18, borderRadius: 16,
+    background: 'linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.035))',
+    border: '1px solid rgba(255,255,255,0.11)',
+    boxShadow: '0 18px 40px -24px rgba(5,3,20,0.9), inset 0 1px 0 rgba(255,255,255,0.07)',
+    backdropFilter: 'blur(8px)',
+    marginBottom: 18,
 };
 const th: CSSProperties = { padding: '12px 14px', fontWeight: 600, fontSize: 12.5, textTransform: 'uppercase', letterSpacing: 0.4 };
 const td: CSSProperties = { padding: '10px 14px', verticalAlign: 'middle' };
