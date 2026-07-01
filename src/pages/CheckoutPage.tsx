@@ -1,0 +1,553 @@
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import axios from 'axios';
+import {
+    ArrowLeft,
+    CheckCircle2,
+    CreditCard,
+    Loader2,
+    MapPin,
+    PackageCheck,
+    ShoppingCart,
+} from 'lucide-react';
+import toast from 'react-hot-toast';
+
+import { fetchCart } from '../api/cart';
+import { placeOrder } from '../api/orders';
+import { createPayment, type PaymentMethod } from '../api/payments';
+
+/* ---------------------------------------------------------------------- */
+/* Stepper — extracted outside CartPage so it doesn't re-render on every  */
+/* state change inside the page.                                           */
+/* ---------------------------------------------------------------------- */
+function CartSteps() {
+    const steps = ['Cart', 'Checkout', 'Payment'];
+    const activeIndex = 1; // Checkout is step 1
+
+    return (
+        <div className="mb-10 flex justify-center">
+            <div className="flex items-center gap-4">
+                {steps.map((step, i) => {
+                    const isActive = i === activeIndex;
+                    const isDone = i < activeIndex;
+
+                    return (
+                        <div key={step} className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                                <span
+                                    className={`h-2 w-2 rounded-full transition-all duration-500 ${isActive
+                                            ? 'animate-pulse scale-100 bg-[#ff5f6d] shadow-[0_0_0_4px_rgba(255,95,109,0.18)]'
+                                            : isDone
+                                                ? 'scale-100 bg-[#ff7a45]'
+                                                : 'scale-75 bg-gray-300'
+                                        }`}
+                                />
+                                <span
+                                    className={`text-lg font-semibold transition-colors duration-500 ${isActive
+                                            ? 'bg-gradient-to-r from-[#ff7a45] to-[#ff416c] bg-clip-text text-transparent'
+                                            : 'text-gray-400'
+                                        }`}
+                                >
+                                    {step}
+                                </span>
+                            </div>
+
+                            {i < steps.length - 1 && (
+                                <div className="relative h-px w-20 overflow-hidden border-t-2 border-dashed border-[#d7d1e8]">
+                                    <div
+                                        className={`absolute inset-y-0 left-0 border-t-2 border-dashed border-[#ff7a45] transition-all duration-700 ease-out ${i < activeIndex ? 'w-full' : 'w-0'
+                                            }`}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
+/* ---------------------------------------------------------------------- */
+/* Payment method options                                                  */
+/* ---------------------------------------------------------------------- */
+type ShippingForm = {
+    street: string;
+    line2: string;
+    city: string;
+    stateRegion: string;
+    postalCode: string;
+    country: string;
+};
+
+const initialShippingForm: ShippingForm = {
+    street: '',
+    line2: '',
+    city: '',
+    stateRegion: '',
+    postalCode: '',
+    country: '',
+};
+
+const paymentMethods: {
+    label: PaymentMethod;
+    description: string;
+    imageSrc: string;
+}[] = [
+        {
+            label: 'Credit Card',
+            description: 'Pay with Visa or Mastercard.',
+            imageSrc: '/payment-methods/visa.png',
+        },
+        {
+            label: 'Debit Card',
+            description: 'Fast local payments via Whish Money.',
+            imageSrc: '/payment-methods/wish-money.png',
+        },
+        {
+            label: 'PayPal',
+            description: 'Pay quickly with Paypal.',
+            imageSrc: '/payment-methods/paypal.png',
+        },
+    ];
+
+/* ---------------------------------------------------------------------- */
+/* CheckoutPage                                                            */
+/* ---------------------------------------------------------------------- */
+export function CheckoutPage() {
+    const navigate = useNavigate();
+
+    const [shippingForm, setShippingForm] = useState<ShippingForm>(initialShippingForm);
+    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Credit Card');
+    const [formError, setFormError] = useState('');
+    const [apiError, setApiError] = useState('');
+    const orderFlowStartedRef = useRef(false);
+
+    const {
+        data: cart,
+        isLoading,
+        isError,
+    } = useQuery({
+        queryKey: ['cart'],
+        queryFn: fetchCart,
+        refetchOnWindowFocus: true,
+    });
+
+    useEffect(() => {
+        if (
+            !isLoading &&
+            !isError &&
+            cart &&
+            cart.items.length === 0 &&
+            !orderFlowStartedRef.current
+        ) {
+            navigate('/cart', { replace: true });
+        }
+    }, [isLoading, isError, cart, navigate]);
+
+    const checkoutMutation = useMutation({
+        mutationFn: async () => {
+            const order = await placeOrder({
+                shippingLine1: shippingForm.street.trim(),
+                shippingLine2: shippingForm.line2.trim() || null,
+                shippingCity: shippingForm.city.trim(),
+                shippingState: shippingForm.stateRegion.trim(),
+                shippingPostalCode: shippingForm.postalCode.trim(),
+                shippingCountry: shippingForm.country.trim(),
+            });
+
+            try {
+                await createPayment({
+                    orderId: order.orderId,
+                    paymentMethod,
+                });
+            } catch (paymentError) {
+                if (axios.isAxiosError(paymentError) && paymentError.response?.status === 409) {
+                    toast('Order placed. Payment already recorded.', { icon: '⚠️' });
+                    return order.orderId;
+                }
+
+                throw paymentError;
+            }
+
+            return order.orderId;
+        },
+
+        onSuccess: (orderId) => {
+            toast.success('Order placed successfully.');
+            navigate(`/orders/${orderId}/confirmation`);
+        },
+
+        onError: (error) => {
+            const message = getCheckoutErrorMessage(error);
+            setApiError(message);
+            toast.error(message);
+        },
+    });
+
+    function formatMoney(value: number) {
+        return `$${Number(value || 0).toFixed(2)}`;
+    }
+
+    function updateShippingField(field: keyof ShippingForm, value: string) {
+        setShippingForm((prev) => ({ ...prev, [field]: value }));
+        setFormError('');
+        setApiError('');
+    }
+
+    function validateForm() {
+        if (!shippingForm.street.trim()) return 'Street address is required.';
+        if (!shippingForm.city.trim()) return 'City is required.';
+        if (!shippingForm.stateRegion.trim()) return 'State / region is required.';
+        if (!shippingForm.postalCode.trim()) return 'Postal code is required.';
+        if (!shippingForm.country.trim()) return 'Country is required.';
+        return '';
+    }
+
+    function handlePlaceOrder() {
+        const validationMessage = validateForm();
+        if (validationMessage) {
+            setFormError(validationMessage);
+            toast.error(validationMessage);
+            return;
+        }
+        setFormError('');
+        setApiError('');
+        orderFlowStartedRef.current = true;
+        checkoutMutation.mutate();
+    }
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[linear-gradient(180deg,#f7f6fb_0%,#fff7f2_100%)]">
+                <Loader2 className="h-10 w-10 animate-spin text-[#ff5f6d]" />
+            </div>
+        );
+    }
+
+    if (isError) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[linear-gradient(180deg,#f7f6fb_0%,#fff7f2_100%)] px-4">
+                <div className="rounded-2xl bg-white p-8 text-center shadow-sm border border-[#efe8f6]">
+                    <p className="text-lg font-semibold text-gray-900">Failed to load checkout.</p>
+                    <p className="mt-2 text-sm text-gray-500">Please refresh the page and try again.</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!cart || cart.items.length === 0) {
+        return null;
+    }
+
+    const isPlacingOrder = checkoutMutation.isPending;
+
+    return (
+        <div className="min-h-screen bg-[linear-gradient(180deg,#f7f6fb_0%,#fff7f2_100%)]">
+            <div className="px-4 py-10">
+                <div className="mx-auto max-w-7xl">
+                    <CartSteps />
+
+                    <div className="mb-8">
+                        <Link
+                            to="/cart"
+                            className="inline-flex items-center gap-2 text-sm font-semibold text-[#ff5f6d] transition hover:text-[#ff416c]"
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                            Back to cart
+                        </Link>
+
+                        <div className="mt-4 flex items-end justify-between gap-4 border-b border-[#d7d1e8] pb-4">
+                            <div>
+                                <h1 className="text-3xl font-bold text-gray-900">Checkout</h1>
+            
+                            </div>
+
+                            <div className="hidden rounded-full border border-[#ffe1d6] bg-white px-4 py-2 text-sm font-semibold text-[#ff5f6d] shadow-sm md:inline-flex md:items-center md:gap-2">
+                                <PackageCheck className="h-4 w-4" />
+                                Secure checkout
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
+                        {/* LEFT COLUMN */}
+                        <div className="space-y-5">
+                            {/* Shipping Address */}
+                            <section className="rounded-2xl border border-[#efe8f6] bg-white p-6 shadow-sm">
+                                <div className="mb-6 flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#fff1ea] text-[#ff5f6d]">
+                                        <MapPin className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-bold text-gray-900">Shipping Address</h2>
+                                        <p className="text-sm text-gray-500">All fields are required.</p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    <div className="md:col-span-2">
+                                        <label className="mb-2 block text-sm font-semibold text-gray-700">
+                                            Street address
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={shippingForm.street}
+                                            onChange={(e) => updateShippingField('street', e.target.value)}
+                                            placeholder="Street address"
+                                            className="w-full rounded-xl border border-[#e7e1f2] bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-[#ff7a45] focus:ring-2 focus:ring-[#ffe1d6]"
+                                        />
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                        <label className="mb-2 block text-sm font-semibold text-gray-700">
+                                            Additional address 
+                                            <span className="ml-1 font-normal text-gray-400"></span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={shippingForm.line2}
+                                            onChange={(e) => updateShippingField('line2', e.target.value)}
+                                            placeholder="Apartment, suite, floor, building"
+                                            className="w-full rounded-xl border border-[#e7e1f2] bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-[#ff7a45] focus:ring-2 focus:ring-[#ffe1d6]"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="mb-2 block text-sm font-semibold text-gray-700">City</label>
+                                        <input
+                                            type="text"
+                                            value={shippingForm.city}
+                                            onChange={(e) => updateShippingField('city', e.target.value)}
+                                            placeholder="Beirut"
+                                            className="w-full rounded-xl border border-[#e7e1f2] bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-[#ff7a45] focus:ring-2 focus:ring-[#ffe1d6]"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="mb-2 block text-sm font-semibold text-gray-700">
+                                            State / Region
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={shippingForm.stateRegion}
+                                            onChange={(e) => updateShippingField('stateRegion', e.target.value)}
+                                            placeholder="Mount Lebanon"
+                                            className="w-full rounded-xl border border-[#e7e1f2] bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-[#ff7a45] focus:ring-2 focus:ring-[#ffe1d6]"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="mb-2 block text-sm font-semibold text-gray-700">
+                                            Postal code
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={shippingForm.postalCode}
+                                            onChange={(e) => updateShippingField('postalCode', e.target.value)}
+                                            placeholder="0000"
+                                            className="w-full rounded-xl border border-[#e7e1f2] bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-[#ff7a45] focus:ring-2 focus:ring-[#ffe1d6]"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="mb-2 block text-sm font-semibold text-gray-700">Country</label>
+                                        <input
+                                            type="text"
+                                            value={shippingForm.country}
+                                            onChange={(e) => updateShippingField('country', e.target.value)}
+                                            placeholder="Lebanon"
+                                            className="w-full rounded-xl border border-[#e7e1f2] bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-[#ff7a45] focus:ring-2 focus:ring-[#ffe1d6]"
+                                        />
+                                    </div>
+                                </div>
+
+                                {formError && (
+                                    <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+                                        {formError}
+                                    </div>
+                                )}
+                            </section>
+
+                            {/* Payment Method */}
+                            <section className="rounded-2xl border border-[#efe8f6] bg-white p-6 shadow-sm">
+                                <div className="mb-6 flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#fff1ea] text-[#ff5f6d]">
+                                        <CreditCard className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-bold text-gray-900">Payment Method</h2>
+                                        <p className="text-sm text-gray-500">Choose how you want to pay.</p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-3">
+                                    {paymentMethods.map((method) => {
+                                        const isSelected = paymentMethod === method.label;
+
+                                        return (
+                                            <label
+                                                key={method.label}
+                                                className={`flex cursor-pointer items-center gap-4 rounded-2xl border px-4 py-4 transition-all duration-300 ${isSelected
+                                                        ? 'border-[#ff9d82] bg-[#fff7f2] shadow-[0_12px_24px_rgba(255,95,109,0.10)]'
+                                                        : 'border-[#e7e1f2] bg-white hover:border-[#ffccb9] hover:bg-[#fffaf7]'
+                                                    }`}
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    name="paymentMethod"
+                                                    value={method.label}
+                                                    checked={isSelected}
+                                                    onChange={() => {
+                                                        setPaymentMethod(method.label);
+                                                        setApiError('');
+                                                    }}
+                                                    className="h-4 w-4 accent-[#ff5f6d]"
+                                                />
+
+                                                {/* Payment logo card */}
+                                                <div
+                                                    className={`flex h-12 w-20 shrink-0 items-center justify-center rounded-xl border p-2 transition-all duration-300 ${isSelected
+                                                            ? 'border-[#ffb199] bg-white shadow-[0_4px_12px_rgba(255,95,109,0.12)]'
+                                                            : 'border-[#f0edf7] bg-[#faf9fc]'
+                                                        }`}
+                                                >
+                                                    <img
+                                                        src={method.imageSrc}
+                                                        alt={method.label}
+                                                        className="h-full w-full object-contain"
+                                                    />
+                                                </div>
+
+                                                <div className="min-w-0">
+                                                    <p className="font-bold text-gray-900">{method.label}</p>
+                                                    <p className="text-sm text-gray-500">{method.description}</p>
+                                                </div>
+
+                                                {isSelected && (
+                                                    <CheckCircle2 className="ml-auto h-5 w-5 shrink-0 text-[#ff5f6d]" />
+                                                )}
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                            </section>
+                        </div>
+
+                        {/* RIGHT COLUMN — Order Summary */}
+                        <aside className="rounded-2xl border border-[#efe8f6] bg-white p-6 shadow-sm lg:sticky lg:top-8">
+                            <div className="mb-6 flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#fff1ea] text-[#ff5f6d]">
+                                    <ShoppingCart className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-gray-900">Order Summary</h2>
+                                    <p className="text-sm text-gray-500">
+                                        {cart.items.length} {cart.items.length === 1 ? 'item' : 'items'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="max-h-[320px] space-y-4 overflow-auto pr-1">
+                                {cart.items.map((item) => (
+                                    <div
+                                        key={item.productId}
+                                        className="flex gap-3 rounded-xl border border-[#f0edf7] bg-[#faf9fc] p-3"
+                                    >
+                                        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-[#f0edf7] bg-white">
+                                            {item.imageUrl ? (
+                                                <img
+                                                    src={item.imageUrl}
+                                                    alt={item.productName}
+                                                    className="h-full w-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="flex h-full w-full items-center justify-center">
+                                                    <ShoppingCart className="h-6 w-6 text-gray-300" />
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate font-semibold text-gray-900">{item.productName}</p>
+                                            <p className="mt-1 text-sm text-gray-500">Qty: {item.quantity}</p>
+                                            <p className="mt-1 font-bold text-gray-900">{formatMoney(item.lineTotal)}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="mt-6 space-y-4 border-t border-[#f0edf7] pt-5">
+                                <div className="flex items-center justify-between text-gray-600">
+                                    <span>Subtotal</span>
+                                    <span className="font-medium text-gray-900">{formatMoney(cart.subtotal)}</span>
+                                </div>
+
+                                {cart.couponCode && cart.discountAmount > 0 && (
+                                    <div className="flex items-center justify-between text-green-600">
+                                        <span>Discount</span>
+                                        <span className="font-semibold">-{formatMoney(cart.discountAmount)}</span>
+                                    </div>
+                                )}
+
+                                <div className="border-t border-[#f0edf7] pt-4">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-lg font-bold text-gray-900">Total</span>
+                                        <span className="text-lg font-bold text-gray-900">
+                                            {formatMoney(cart.finalTotal)}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {apiError && (
+                                <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+                                    {apiError}
+                                </div>
+                            )}
+
+                            <button
+                                type="button"
+                                onClick={handlePlaceOrder}
+                                disabled={isPlacingOrder}
+                                className="mt-6 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ff7a45] to-[#ff416c] px-5 py-3 font-semibold text-white shadow-[0_16px_35px_rgba(255,95,109,0.28)] transition duration-300 ease-out hover:scale-[1.01] hover:shadow-[0_20px_42px_rgba(255,95,109,0.34)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+                            >
+                                {isPlacingOrder && <Loader2 className="h-4 w-4 animate-spin" />}
+                                {isPlacingOrder ? 'Placing order...' : 'Place Order'}
+                            </button>
+
+                            <p className="mt-4 text-center text-xs leading-5 text-gray-400">
+                                By placing your order, you confirm your shipping and payment details.
+                            </p>
+                        </aside>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function getCheckoutErrorMessage(error: unknown) {
+    if (axios.isAxiosError(error)) {
+        const status = error.response?.status;
+        const data = error.response?.data;
+
+        if (typeof data === 'string') return data;
+        if (data?.message) return data.message;
+        if (data?.detail) return data.detail;
+        if (data?.title) return data.title;
+
+        if (data?.errors) {
+            const firstError = Object.values(data.errors).flat()[0];
+            if (typeof firstError === 'string') return firstError;
+        }
+
+        if (status === 400 || status === 409) {
+            return 'Unable to place order. Some items may be out of stock.';
+        }
+    }
+
+    if (error instanceof Error) return error.message;
+    return 'Something went wrong while placing your order.';
+}
