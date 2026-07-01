@@ -14,6 +14,7 @@ import { AdminInventoryPage } from './pages/admin/AdminInventoryPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { AdminPaymentsPage } from './pages/admin/AdminPaymentsPage';
 import { AdminCategoriesPage } from './pages/admin/AdminCategoriesPage';
+import { AdminStoresPage } from './pages/admin/AdminStoresPage';
 
 function App() {
     return (
@@ -43,9 +44,8 @@ function App() {
                     <Route path="/admin/inventory" element={<AdminInventoryPage />} />
                     <Route path="/admin/payments" element={<AdminPaymentsPage />} />
                     <Route path="/admin/categories" element={<AdminCategoriesPage />} />
+                    <Route path="/admin/stores" element={<AdminStoresPage />} />
                 </Route>
-
-
 
                 {/* Logged in AND Seller. */}
                 <Route element={<SellerRoute />}>

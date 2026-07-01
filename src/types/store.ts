@@ -15,6 +15,7 @@ export interface Store {
     description: string | null;   // optional; backend may send null
     status: StoreStatus;          // "Pending" right after creation
     createdAt: string;            // ISO date-time string from the backend
+    ownerName: string | null;
 }
 
 // What we SEND to POST /api/v1/auth/register-seller (one-step seller sign-up + first store).

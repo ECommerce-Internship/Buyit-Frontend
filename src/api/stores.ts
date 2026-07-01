@@ -39,3 +39,28 @@ export async function getAllStoresAdmin(): Promise<Store[]> {
     const res = await axiosInstance.get<Store[]>('/api/v1/admin/stores');
     return res.data;
 }
+
+// ADMIN: list ONLY the stores awaiting approval. GET /api/v1/admin/stores/pending (Admin only).
+export async function getPendingStoresAdmin(): Promise<Store[]> {
+    const res = await axiosInstance.get<Store[]>('/api/v1/admin/stores/pending');
+    return res.data;
+}
+
+// ADMIN: approve a store (Pending -> Approved, or re-approve a Suspended/Rejected one).
+// PUT /api/v1/admin/stores/{id}/approve -> 200 + the updated store.
+export async function approveStore(id: number): Promise<Store> {
+    const res = await axiosInstance.put<Store>(`/api/v1/admin/stores/${id}/approve`);
+    return res.data;
+}
+
+// ADMIN: reject a store application (-> Rejected). PUT .../{id}/reject -> 200 + the updated store.
+export async function rejectStore(id: number): Promise<Store> {
+    const res = await axiosInstance.put<Store>(`/api/v1/admin/stores/${id}/reject`);
+    return res.data;
+}
+
+// ADMIN: suspend a live store (Approved -> Suspended). PUT .../{id}/suspend -> 200 + updated store.
+export async function suspendStore(id: number): Promise<Store> {
+    const res = await axiosInstance.put<Store>(`/api/v1/admin/stores/${id}/suspend`);
+    return res.data;
+}

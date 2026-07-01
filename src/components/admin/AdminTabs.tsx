@@ -9,6 +9,7 @@ const TABS = [
     { to: '/admin/products', label: 'Products' }, // from TB-65
     { to: '/admin/payments', label: 'Payments' }, // from TB-136
     { to: '/admin/categories', label: 'Categories' }, // from TB-137
+    { to: '/admin/stores', label: 'Stores' },
 ];
 
 export function AdminTabs() {
