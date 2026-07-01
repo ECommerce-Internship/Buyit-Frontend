@@ -1,0 +1,87 @@
+/* Buyit admin — "vibrant glass" theme layer (TB-140 polish).
+   Only the effects inline styles can't express live here: the aurora-glow
+   background, hover lift, gradient text, and the active-tab glow.
+   Panel/card depth (gradient fill, shadow, blur) is set inline on the shared
+   `panel`/`kpiCard` style objects so every admin page inherits it. */
+
+/* ---- Page shell: lifts the flat #0a0a12 into a lit, layered backdrop ---- */
+.admin-shell {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background:
+        radial-gradient(1200px 560px at 8% -10%, rgba(139, 92, 246, 0.20), transparent 60%),
+        radial-gradient(1000px 520px at 100% -6%, rgba(99, 102, 241, 0.16), transparent 55%),
+        radial-gradient(900px 620px at 60% 120%, rgba(52, 211, 153, 0.08), transparent 60%),
+        #0b0b16;
+}
+
+/* A slow-drifting aurora blob behind the content — the "alive" part. */
+.admin-shell::before {
+    content: "";
+    position: absolute;
+    top: -18%;
+    left: -12%;
+    right: -12%;
+    height: 55%;
+    background: radial-gradient(closest-side, rgba(139, 92, 246, 0.22), transparent 72%);
+    filter: blur(46px);
+    z-index: -1;
+    pointer-events: none;
+    animation: adminAurora 20s ease-in-out infinite alternate;
+}
+
+@keyframes adminAurora {
+    0%   { transform: translate3d(-4%, -2%, 0) scale(1);   opacity: 0.75; }
+    100% { transform: translate3d(7%, 4%, 0)  scale(1.18); opacity: 1;    }
+}
+
+/* ---- Interactive cards lift toward the cursor for a 3D feel ---- */
+.admin-lift {
+    transition: transform 0.26s cubic-bezier(0.2, 0.7, 0.3, 1), box-shadow 0.26s ease, border-color 0.26s ease;
+    will-change: transform;
+}
+.admin-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 30px 60px -26px rgba(99, 80, 190, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    border-color: rgba(167, 139, 250, 0.4);
+}
+
+/* ---- Gradient number for headline KPI values ---- */
+.admin-gradient-num {
+    background: linear-gradient(120deg, #d6ccff, #a78bfa 42%, #6366f1);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+
+/* ---- Tabs: subtle hover + a glowing gradient pill when active ---- */
+.admin-tab {
+    transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+.admin-tab:hover {
+    color: #fff !important;
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.06);
+}
+.admin-tab-active {
+    background: linear-gradient(180deg, rgba(139, 92, 246, 0.32), rgba(99, 102, 241, 0.16)) !important;
+    border-color: rgba(167, 139, 250, 0.5) !important;
+    box-shadow: 0 12px 26px -14px rgba(124, 92, 246, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* ---- Native <select> option lists ----
+   The browser paints the open dropdown with an OS-default (white) background,
+   so our white option text was invisible until a row was hovered/highlighted.
+   Force a dark background + light text so every option is readable. */
+.admin-shell select option,
+.admin-shell select optgroup {
+    background-color: #14141f;
+    color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-shell::before { animation: none; }
+    .admin-lift, .admin-tab { transition: none; }
+}
