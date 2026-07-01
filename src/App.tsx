@@ -9,6 +9,8 @@ import { SellerRoute } from './routes/SellerRoute';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { AccountPage } from './pages/AccountPage';
 import { SellerDashboardPage } from './pages/SellerDashboardPage';
+import { CheckoutPage } from './pages/CheckoutPage';
+import { OrderConfirmationPage } from './pages/OrderConfirmationPage';
 
 // TEMP placeholders so the guards are testable NOW. Replace each with the real page
 // in its own ticket (admin dashboard, seller dashboard/TB-139).
@@ -30,9 +32,14 @@ function App() {
             {/* Public: where the backend redirects after Google sign-in (TB-133). */}
             <Route path="/auth/callback" element={<GoogleCallbackPage />} />
 
-            {/* Must be logged in for anything below. (/products is NO LONGER here.) */}
             {/* Must be logged in for anything below. */}
             <Route element={<ProtectedRoute />}>
+
+                <Route path="/cart" element={<CartPage />} />
+                <Route path="/checkout" element={<CheckoutPage />} />
+                <Route path="/orders/:id/confirmation" element={<OrderConfirmationPage />} />
+                <Route path="/account" element={<AccountPage />} />
+
                 {/* Logged in (any role): your own account/profile (TB-134). */}
                 <Route path="/account" element={<AccountPage />} />
 
