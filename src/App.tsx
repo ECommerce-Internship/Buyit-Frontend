@@ -18,6 +18,7 @@ import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { AdminPaymentsPage } from './pages/admin/AdminPaymentsPage';
 import { AdminCategoriesPage } from './pages/admin/AdminCategoriesPage';
 import { AdminStoresPage } from './pages/admin/AdminStoresPage';
+import { StorefrontPage } from './pages/StorefrontPage';
 
 function App() {
     return (
@@ -30,6 +31,8 @@ function App() {
 
             {/* Public: a single product's detail page (TB-59). */}
             <Route path="/products/:id" element={<ProductDetailPage />} />
+            {/* Public: one store's storefront — its header + only its products (TB-141). */}
+            <Route path="/stores/:slug" element={<StorefrontPage />} />
             {/* Public: where the backend redirects after Google sign-in (TB-133). */}
             <Route path="/auth/callback" element={<GoogleCallbackPage />} />
 
