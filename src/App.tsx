@@ -2,12 +2,15 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage';
 import { ProductListingPage } from './pages/ProductListingPage';
 import { GoogleCallbackPage } from './pages/GoogleCallbackPage';
+import { CartPage } from './pages/CartPage';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import { AdminRoute } from './routes/AdminRoute';
 import { SellerRoute } from './routes/SellerRoute';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { AccountPage } from './pages/AccountPage';
 import { SellerDashboardPage } from './pages/SellerDashboardPage';
+import { CheckoutPage } from './pages/CheckoutPage';
+import { OrderConfirmationPage } from './pages/OrderConfirmationPage';
 import { AdminProductsPage } from './pages/admin/AdminProductsPage';
 import { AdminOrdersPage } from './pages/admin/AdminOrdersPage';
 import { AdminInventoryPage } from './pages/admin/AdminInventoryPage';
@@ -32,6 +35,11 @@ function App() {
 
             {/* Must be logged in for anything below. (/products is NO LONGER here.) */}
             <Route element={<ProtectedRoute />}>
+                {/* Cart / checkout / order confirmation. */}
+                <Route path="/cart" element={<CartPage />} />
+                <Route path="/checkout" element={<CheckoutPage />} />
+                <Route path="/orders/:id/confirmation" element={<OrderConfirmationPage />} />
+
                 {/* Logged in (any role): your own account/profile (TB-134). */}
                 <Route path="/account" element={<AccountPage />} />
 

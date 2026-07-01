@@ -1,8 +1,40 @@
 // src/api/payments.ts
-// The ONLY place that knows the admin payments backend URLs (TB-136).
+// All payment API calls: the customer checkout flow (createPayment / fetchPaymentByOrderId)
+// AND the admin payments/refunds tab (fetchAdminPayments / refundPayment, TB-136).
 import axiosInstance from './axiosInstance';
 import type { PaginatedResult } from '../types/product';
 import type { PaymentRow } from '../types/payment';
+
+// ---------- CUSTOMER CHECKOUT ----------
+
+export type PaymentMethod = 'Credit Card' | 'Debit Card' | 'PayPal';
+
+export interface ProcessPaymentRequest {
+    orderId: number;
+    paymentMethod: PaymentMethod;
+}
+
+export interface PaymentResponse {
+    paymentId: number;
+    orderId: number;
+    amount: number;
+    method: string;
+    status: string;
+    transactionId: string | null;
+    paidAt: string | null;
+}
+
+export async function createPayment(request: ProcessPaymentRequest): Promise<PaymentResponse> {
+    const res = await axiosInstance.post<PaymentResponse>('/api/v1/payments', request);
+    return res.data;
+}
+
+export async function fetchPaymentByOrderId(orderId: number): Promise<PaymentResponse> {
+    const res = await axiosInstance.get<PaymentResponse>(`/api/v1/payments/${orderId}`);
+    return res.data;
+}
+
+// ---------- ADMIN PAYMENTS / REFUNDS (TB-136) ----------
 
 // The query params the admin payments list accepts. All optional (paging has backend defaults).
 export interface AdminPaymentParams {
