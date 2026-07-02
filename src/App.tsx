@@ -19,9 +19,11 @@ import { AdminPaymentsPage } from './pages/admin/AdminPaymentsPage';
 import { AdminCategoriesPage } from './pages/admin/AdminCategoriesPage';
 import { AdminStoresPage } from './pages/admin/AdminStoresPage';
 import { StorefrontPage } from './pages/StorefrontPage';
+import { ChatWidget } from './components/chat/ChatWidget';
 
 function App() {
     return (
+        <>
         <Routes>
             {/* Public: the marketing landing page; its CTAs open the global auth modal. */}
             <Route path="/" element={<LandingPage />} />
@@ -64,6 +66,8 @@ function App() {
                 </Route>
             </Route>
         </Routes>
+        <ChatWidget />
+        </>
     );
 }
 

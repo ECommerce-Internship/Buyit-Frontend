@@ -118,3 +118,30 @@ body {
     transition-duration: .001ms !important;
   }
 }
+
+/* ------------------------------------------------------------------ *
+ * Buyit chat bot (TB-102) — launcher + in-panel companion + alive bg
+ * ------------------------------------------------------------------ */
+@keyframes botIdle  { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-4px) rotate(-2deg); } }
+@keyframes botJump  { 0% { transform: translateY(0) scale(1); } 22% { transform: translateY(-12px) scale(1.09); } 44% { transform: translateY(0) scale(.97); } 60% { transform: translateY(-6px) scale(1.03); } 74%,100% { transform: translateY(0) scale(1); } }
+@keyframes botSneak { 0% { transform: translateY(28px) rotate(9deg) scale(.86); opacity: 0; } 60% { transform: translateY(-6px) rotate(-4deg) scale(1.03); opacity: 1; } 100% { transform: translateY(0) rotate(0) scale(1); opacity: 1; } }
+@keyframes blobDrift { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(16px,-20px) scale(1.14); } 66% { transform: translate(-14px,12px) scale(.9); } }
+
+/* Launcher button: silver bot on a dark chip with a neon-cyan contour that flares on hover. */
+.bot-fab-btn {
+  border: 1.5px solid rgba(120,240,255,.5);
+  box-shadow: 0 0 18px -2px rgba(93,242,255,.4), 0 14px 34px -12px rgba(124,58,237,.5);
+  transition: box-shadow .25s ease, transform .2s ease, border-color .25s ease;
+}
+.bot-fab-btn:hover {
+  transform: scale(1.06);
+  border-color: rgba(150,245,255,.95);
+  box-shadow: 0 0 0 2px rgba(120,240,255,.45), 0 0 34px 0 rgba(93,242,255,.75), 0 18px 40px -10px rgba(124,58,237,.6);
+}
+
+/* The bot gently idles; on hover it jumps with excitement. */
+.bot-fab { display: flex; animation: botIdle 3.2s ease-in-out infinite; }
+.bot-fab-btn:hover .bot-fab { animation: botJump .55s ease infinite; }
+
+/* The same bot sneaking into the panel's empty state, then settling into an idle bob. */
+.bot-sneak { display: inline-block; animation: botSneak .55s ease-out both, botIdle 3.6s ease-in-out .55s infinite; }
