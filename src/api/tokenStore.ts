@@ -1,9 +1,10 @@
 // src/api/tokenStore.ts
 import type { AuthResponse } from '../types/auth';
 
-// --- The in-memory tokens (the ONLY copy outside React state). Plain module variables.
+// --- The in-memory access token (the ONLY copy outside React state). Plain module variable.
+// The refresh token is NOT tracked here anymore — it lives only in an HttpOnly cookie the
+// browser manages, so JavaScript (and any XSS payload) can never read or exfiltrate it.
 let accessToken: string | null = null;
-let refreshToken: string | null = null;
 
 // --- Callbacks the React layer (AuthProvider) registers, so the Axios interceptor can
 //     push refreshed tokens back into React state, and trigger a logout when refresh fails.
@@ -11,14 +12,12 @@ let onTokensRefreshed: ((data: AuthResponse) => void) | null = null;
 let onAuthFailure: (() => void) | null = null;
 
 export const tokenStore = {
-    // Read — used by the Axios request/response interceptors.
+    // Read — used by the Axios request interceptor.
     getAccessToken: () => accessToken,
-    getRefreshToken: () => refreshToken,
 
-    // Write — AuthProvider mirrors its React state into here so the interceptors stay current.
-    setTokens(access: string | null, refresh: string | null) {
-        accessToken = access;
-        refreshToken = refresh;
+    // Write — AuthProvider mirrors its React state into here so the interceptor stays current.
+    setAccessToken(token: string | null) {
+        accessToken = token;
     },
 
     // AuthProvider registers how to react to events that originate inside the interceptor.
@@ -34,11 +33,10 @@ export const tokenStore = {
     // (so the very next request uses the new token) AND notify React state.
     handleRefreshed(data: AuthResponse) {
         accessToken = data.accessToken;
-        refreshToken = data.refreshToken;
         onTokensRefreshed?.(data);
     },
 
-    // Called by the interceptor when refresh is impossible (no refresh token, or it failed).
+    // Called by the interceptor when refresh is impossible (no refresh token cookie, or it failed).
     handleAuthFailure() {
         onAuthFailure?.();
     },

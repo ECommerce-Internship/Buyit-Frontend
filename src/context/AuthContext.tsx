@@ -21,8 +21,8 @@ import type { AuthResponse, AuthUser } from '../types/auth';
 interface AuthContextType {
     user: AuthUser | null;
     accessToken: string | null;
-    refreshToken: string | null;
     isAuthenticated: boolean;
+    isInitializing: boolean;
     login: (data: AuthResponse) => void;
     logout: () => Promise<void>;
     updateUser: (partial: Partial<AuthUser>) => void;
@@ -48,19 +48,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
 
-    // The session — in MEMORY only. A page reload wipes this (the in-memory trade-off).
+    // The access token + user live in MEMORY only. The refresh token lives in an HttpOnly
+    // cookie (set by the backend), which is what lets restoreSession() below rebuild the
+    // session after a page reload without ever exposing the refresh token to JavaScript.
     const [accessToken, setAccessToken] = useState<string | null>(null);
-    const [refreshToken, setRefreshToken] = useState<string | null>(null);
     const [user, setUser] = useState<AuthUser | null>(null);
+    const [isInitializing, setIsInitializing] = useState(true);
 
     // Clear everything locally (used by logout and by refresh-failure). Also drop all
     // cached server state so one user's data (e.g. the ['me'] profile) can't bleed into
     // the next session in the same SPA. (Review finding #3 — CWE-525.)
     const clearSession = useCallback(() => {
         setAccessToken(null);
-        setRefreshToken(null);
         setUser(null);
-        tokenStore.setTokens(null, null);
+        tokenStore.setAccessToken(null);
         queryClient.clear();
     }, [queryClient]);
 
@@ -69,9 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         (data: AuthResponse) => {
             const authUser = toAuthUser(data);
             setAccessToken(data.accessToken);
-            setRefreshToken(data.refreshToken);
             setUser(authUser);
-            tokenStore.setTokens(data.accessToken, data.refreshToken); // sync the bridge now
+            tokenStore.setAccessToken(data.accessToken); // sync the bridge now
             navigate(redirectPathForRole(authUser.role));              // role-based redirect
         },
         [navigate],
@@ -82,17 +82,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser((prev) => (prev ? { ...prev, ...partial } : prev));
     }, []);
 
-    // Revoke the refresh token on the server, then clear local state no matter what.
+    // Revoke the refresh token cookie on the server, then clear local state no matter what.
     const logout = useCallback(async () => {
-        const currentRefresh = tokenStore.getRefreshToken();
         try {
-            if (currentRefresh) {
-                await axiosInstance.post(
-                    '/api/v1/auth/logout',
-                    { refreshToken: currentRefresh },
-                    { _skipAuthRefresh: true }, // a 401 here must not trigger a refresh
-                );
-            }
+            await axiosInstance.post(
+                '/api/v1/auth/logout',
+                {},
+                { _skipAuthRefresh: true }, // a 401 here must not trigger a refresh
+            );
         } catch {
             // Ignore network/4xx errors — logout must always succeed locally.
         } finally {
@@ -103,8 +100,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Keep the non-React bridge in sync with React state (covers the refresh path too).
     useEffect(() => {
-        tokenStore.setTokens(accessToken, refreshToken);
-    }, [accessToken, refreshToken]);
+        tokenStore.setAccessToken(accessToken);
+    }, [accessToken]);
 
     // Register the callbacks the Axios interceptor calls (refresh success / auth failure).
     useEffect(() => {
@@ -112,7 +109,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             onTokensRefreshed: (data) => {
                 // A silent refresh happened: update state so the UI keeps the latest tokens.
                 setAccessToken(data.accessToken);
-                setRefreshToken(data.refreshToken);
                 setUser(toAuthUser(data));
             },
             onAuthFailure: () => {
@@ -123,13 +119,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
     }, [clearSession, navigate]);
 
+    // On first mount, ask the server if we still have a valid session (via the HttpOnly
+    // refresh-token cookie). This is what makes a page refresh NOT log the user out.
+    useEffect(() => {
+        let cancelled = false;
+
+        async function restoreSession() {
+            try {
+                const res = await axiosInstance.post<AuthResponse>(
+                    '/api/v1/auth/refresh-token',
+                    {},
+                    { _skipAuthRefresh: true },
+                );
+                if (!cancelled) {
+                    setAccessToken(res.data.accessToken);
+                    setUser(toAuthUser(res.data));
+                    tokenStore.setAccessToken(res.data.accessToken);
+                }
+            } catch {
+                // No valid cookie (never logged in, or it expired) — stay logged out. Not an error.
+            } finally {
+                if (!cancelled) setIsInitializing(false);
+            }
+        }
+
+        restoreSession();
+        return () => { cancelled = true; };
+    }, []);
+
     return (
         <AuthContext.Provider
             value={{
                 user,
                 accessToken,
-                refreshToken,
                 isAuthenticated: accessToken !== null,
+                isInitializing,
                 login,
                 logout,
                 updateUser,

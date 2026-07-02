@@ -7,8 +7,14 @@ import type { ProductQueryParams } from './products';
 
 // REGISTER A SELLER in one step: creates a Seller account + a Pending first store and returns
 // the SAME shape as login (tokens + user). Public endpoint (no login needed to call it).
+// _skipAuthRefresh: a 401/error here is a registration failure, not an expired session — it
+// must not trigger the interceptor's refresh-token/logout flow.
 export async function registerSeller(body: RegisterSellerBody): Promise<AuthResponse> {
-    const res = await axiosInstance.post<AuthResponse>('/api/v1/auth/register-seller', body);
+    const res = await axiosInstance.post<AuthResponse>(
+        '/api/v1/auth/register-seller',
+        body,
+        { _skipAuthRefresh: true },
+    );
     return res.data;
 }
 
