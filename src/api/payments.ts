@@ -1,6 +1,6 @@
 import axiosInstance from './axiosInstance';
 
-export type PaymentMethod = 'Credit Card' | 'Debit Card' | 'PayPal';
+export type PaymentMethod = 'CreditCard' | 'DebitCard' | 'PayPal';
 
 export interface ProcessPaymentRequest {
     orderId: number;

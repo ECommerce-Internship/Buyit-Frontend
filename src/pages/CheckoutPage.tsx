@@ -91,23 +91,27 @@ const initialShippingForm: ShippingForm = {
 };
 
 const paymentMethods: {
-    label: PaymentMethod;
+    value: PaymentMethod;
+    label: string;
     description: string;
     imageSrc: string;
 }[] = [
         {
+            value: 'CreditCard',
             label: 'Credit Card',
             description: 'Pay with Visa or Mastercard.',
             imageSrc: '/payment-methods/visa.png',
         },
         {
+            value: 'DebitCard',
             label: 'Debit Card',
             description: 'Fast local payments via Whish Money.',
             imageSrc: '/payment-methods/wish-money.png',
         },
         {
+            value: 'PayPal',
             label: 'PayPal',
-            description: 'Pay quickly with Paypal.',
+            description: 'Pay quickly with PayPal.',
             imageSrc: '/payment-methods/paypal.png',
         },
     ];
@@ -119,7 +123,7 @@ export function CheckoutPage() {
     const navigate = useNavigate();
 
     const [shippingForm, setShippingForm] = useState<ShippingForm>(initialShippingForm);
-    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Credit Card');
+    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CreditCard');
     const [formError, setFormError] = useState('');
     const [apiError, setApiError] = useState('');
     const orderFlowStartedRef = useRef(false);
@@ -384,7 +388,7 @@ export function CheckoutPage() {
 
                                 <div className="grid grid-cols-1 gap-3">
                                     {paymentMethods.map((method) => {
-                                        const isSelected = paymentMethod === method.label;
+                                        const isSelected = paymentMethod === method.value;
 
                                         return (
                                             <label
@@ -397,10 +401,10 @@ export function CheckoutPage() {
                                                 <input
                                                     type="radio"
                                                     name="paymentMethod"
-                                                    value={method.label}
+                                                    value={method.value}
                                                     checked={isSelected}
                                                     onChange={() => {
-                                                        setPaymentMethod(method.label);
+                                                        setPaymentMethod(method.value);
                                                         setApiError('');
                                                     }}
                                                     className="h-4 w-4 accent-[#ff5f6d]"

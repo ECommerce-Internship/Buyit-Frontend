@@ -11,6 +11,8 @@ import { AccountPage } from './pages/AccountPage';
 import { SellerDashboardPage } from './pages/SellerDashboardPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { OrderConfirmationPage } from './pages/OrderConfirmationPage';
+import { MyOrdersPage } from './pages/MyOrdersPage';
+import { OrderDetailPage } from './pages/OrderDetailPage';
 
 // TEMP placeholders so the guards are testable NOW. Replace each with the real page
 // in its own ticket (admin dashboard, seller dashboard/TB-139).
@@ -39,6 +41,8 @@ function App() {
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/orders/:id/confirmation" element={<OrderConfirmationPage />} />
                 <Route path="/account" element={<AccountPage />} />
+                <Route path="/orders" element={<MyOrdersPage />} />
+                <Route path="/orders/:id" element={<OrderDetailPage />} />
 
                 {/* Logged in (any role): your own account/profile (TB-134). */}
                 <Route path="/account" element={<AccountPage />} />
