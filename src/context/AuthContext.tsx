@@ -4,6 +4,7 @@ import {
     useCallback,
     useContext,
     useEffect,
+    useRef,
     useState,
     type ReactNode,
 } from 'react';
@@ -121,8 +122,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // On first mount, ask the server if we still have a valid session (via the HttpOnly
     // refresh-token cookie). This is what makes a page refresh NOT log the user out.
+    //
+    // The ref guard makes this run EXACTLY ONCE. In dev, React StrictMode invokes mount effects
+    // twice; without the guard both calls would race with the SAME refresh-token cookie. The
+    // server rotates the token on the first (revoking it), so the second call would hit the
+    // now-revoked token and throw "Refresh token has been revoked." We deliberately do NOT use a
+    // cancel-on-cleanup flag here: under StrictMode the first pass's cleanup would run before the
+    // request resolves and would discard the very session we just restored.
+    const didRestore = useRef(false);
     useEffect(() => {
-        let cancelled = false;
+        if (didRestore.current) return;
+        didRestore.current = true;
 
         async function restoreSession() {
             try {
@@ -131,20 +141,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     {},
                     { _skipAuthRefresh: true },
                 );
-                if (!cancelled) {
-                    setAccessToken(res.data.accessToken);
-                    setUser(toAuthUser(res.data));
-                    tokenStore.setAccessToken(res.data.accessToken);
-                }
+                setAccessToken(res.data.accessToken);
+                setUser(toAuthUser(res.data));
+                tokenStore.setAccessToken(res.data.accessToken);
             } catch {
                 // No valid cookie (never logged in, or it expired) — stay logged out. Not an error.
             } finally {
-                if (!cancelled) setIsInitializing(false);
+                setIsInitializing(false);
             }
         }
 
         restoreSession();
-        return () => { cancelled = true; };
     }, []);
 
     return (
