@@ -1,5 +1,5 @@
 // src/pages/StorefrontPage.tsx
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Logo from '../components/Logo';
 import type { ProductQueryParams } from '../api/products';
@@ -21,7 +21,14 @@ export function StorefrontPage() {
     const [page, setPage] = useState(1);
 
     // Any new search jumps back to the first page (page 3 of a filtered list might be empty).
-    useEffect(() => { setPage(1); }, [debouncedSearch]);
+    // Done DURING RENDER (React's recommended "adjust state when a value changes" pattern) rather
+    // than in an effect — it re-renders immediately without an extra commit, and avoids the
+    // cascading-render lint rule. See https://react.dev/learn/you-might-not-need-an-effect
+    const [searchedFor, setSearchedFor] = useState(debouncedSearch);
+    if (debouncedSearch !== searchedFor) {
+        setSearchedFor(debouncedSearch);
+        setPage(1);
+    }
 
     // The store header. A 404 (store not approved / not found) shows up as `storeError`.
     const { data: store, isLoading: storeLoading, isError: storeError } = useStoreBySlug(slug);
