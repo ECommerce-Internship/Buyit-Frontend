@@ -2,8 +2,9 @@
 import { useMemo, useState } from 'react';
 import type { CSSProperties, FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { LogOut } from 'lucide-react';
+import { LogOut, UserCog } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useStores } from '../hooks/useStores';
 import { useCreateStore } from '../hooks/useCreateStore';
@@ -39,6 +40,18 @@ export function SellerDashboardPage() {
 
     const [storeName, setStoreName] = useState('');
     const [storeDescription, setStoreDescription] = useState('');
+    const [loggingOut, setLoggingOut] = useState(false);
+
+    // Guard against a double-click firing two /logout calls.
+    async function onLogout() {
+        if (loggingOut) return;
+        setLoggingOut(true);
+        try {
+            await logout();
+        } finally {
+            setLoggingOut(false);
+        }
+    }
 
     const createStore = useCreateStore({
         onSuccess: (store) => {
@@ -80,11 +93,18 @@ export function SellerDashboardPage() {
                             Welcome{user ? `, ${user.firstName}` : ''}. Manage your stores below.
                         </p>
                     </div>
-                    <button type="button" onClick={() => logout()} title="Log out"
-                        style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 16px', fontFamily: 'inherit', fontSize: 14.5, fontWeight: 600, color: '#ff8fa3', cursor: 'pointer', borderRadius: 11, border: '1px solid rgba(255,93,122,0.28)', background: 'rgba(255,93,122,0.08)' }}>
-                        <LogOut size={15} aria-hidden />
-                        Log out
-                    </button>
+                    <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <Link to="/account" title="My account"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 16px', fontFamily: 'inherit', fontSize: 14.5, fontWeight: 600, color: 'rgba(255,255,255,0.82)', textDecoration: 'none', borderRadius: 11, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.04)' }}>
+                            <UserCog size={15} aria-hidden />
+                            My account
+                        </Link>
+                        <button type="button" onClick={onLogout} disabled={loggingOut} title="Log out"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 16px', fontFamily: 'inherit', fontSize: 14.5, fontWeight: 600, color: '#ff8fa3', cursor: loggingOut ? 'wait' : 'pointer', opacity: loggingOut ? 0.6 : 1, borderRadius: 11, border: '1px solid rgba(255,93,122,0.28)', background: 'rgba(255,93,122,0.08)' }}>
+                            <LogOut size={15} aria-hidden />
+                            {loggingOut ? 'Logging out…' : 'Log out'}
+                        </button>
+                    </div>
                 </div>
 
                 {/* Pending-store gate: required message + disabled selling actions */}
