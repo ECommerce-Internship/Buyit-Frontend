@@ -79,3 +79,49 @@ export interface ProductReviewsResponse {
     totalCount: number;
     reviews: PaginatedResult<ReviewResponse>;
 }
+
+// Body for POST /api/v1/product (create). Mirrors backend CreateProductRequest EXACTLY.
+// NOTE: storeId is required by the backend (> 0). imageUrl is optional — we usually leave it
+// out and upload the real image in a second step (POST /product/{id}/image).
+export interface CreateProductBody {
+    name: string;
+    description: string;
+    sku: string;
+    price: number;
+    imageUrl?: string | null;
+    categoryId: number;
+    storeId: number;
+    initialStock: number;
+}
+
+// Body for PUT /api/v1/product/{id} (edit). Mirrors backend UpdateProductRequest EXACTLY.
+// IMPORTANT: there is NO sku, NO storeId, NO initialStock here — those cannot be edited.
+export interface UpdateProductBody {
+    name: string;
+    description: string;
+    price: number;
+    imageUrl?: string | null;
+    categoryId: number;
+}
+
+// One rejected row from an Excel import (mirrors backend ImportRowError).
+export interface ImportRowError {
+    row: number;      // the 1-based Excel row number the admin sees in the spreadsheet
+    reason: string;   // human-readable why-it-failed message
+}
+
+// The whole import summary (mirrors backend ImportResultDto).
+export interface ImportResult {
+    addedCount: number;
+    failedCount: number;
+    errors: ImportRowError[];
+}
+
+// The AI suggestion returned by POST /product/{id}/generate-content.
+// It is a SUGGESTION — nothing is saved until the admin saves the product (PUT).
+export interface ProductContentSuggestion {
+    description: string;
+    features: string[];
+    seoTitle: string;
+    metaDescription: string;
+}
