@@ -112,25 +112,6 @@ export function ProductListingPage() {
                             My account
                         </Link>
                     )}
-                    <Link
-                        to="/cart"
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            padding: '9px 16px',
-                            borderRadius: 11,
-                            background: 'linear-gradient(135deg,#ff7a45,#ff416c)',
-                            color: '#fff',
-                            fontSize: 13.5,
-                            fontWeight: 700,
-                            textDecoration: 'none',
-                            boxShadow: '0 10px 20px -10px rgba(255,65,108,.65)',
-                            whiteSpace: 'nowrap',
-                        }}
-                    >
-                        Go to Cart
-                    </Link>
                 </div>
             </header>
 
