@@ -20,6 +20,8 @@ import { AdminCategoriesPage } from './pages/admin/AdminCategoriesPage';
 import { AdminStoresPage } from './pages/admin/AdminStoresPage';
 import { StorefrontPage } from './pages/StorefrontPage';
 import { ChatWidget } from './components/chat/ChatWidget';
+import { MyOrdersPage } from './pages/MyOrdersPage';
+import { OrderDetailPage } from './pages/OrderDetailPage';
 
 function App() {
     return (
@@ -44,6 +46,9 @@ function App() {
                 <Route path="/cart" element={<CartPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/orders/:id/confirmation" element={<OrderConfirmationPage />} />
+                <Route path="/account" element={<AccountPage />} />
+                <Route path="/orders" element={<MyOrdersPage />} />
+                <Route path="/orders/:id" element={<OrderDetailPage />} />
 
                 {/* Logged in (any role): your own account/profile (TB-134). */}
                 <Route path="/account" element={<AccountPage />} />

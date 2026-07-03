@@ -7,7 +7,7 @@ import type { PaymentRow } from '../types/payment';
 
 // ---------- CUSTOMER CHECKOUT ----------
 
-export type PaymentMethod = 'Credit Card' | 'Debit Card' | 'PayPal';
+export type PaymentMethod = 'CreditCard' | 'DebitCard' | 'PayPal';
 
 export interface ProcessPaymentRequest {
     orderId: number;
