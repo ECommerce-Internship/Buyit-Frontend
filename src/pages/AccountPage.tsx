@@ -158,7 +158,7 @@ export function AccountPage() {
                                 <Field label="Email (read-only)">
                                     <input value={profile.email} readOnly style={{ ...inputStyle(), background: '#f3f2f8', color: '#9a97a8', cursor: 'not-allowed' }} />
                                 </Field>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                                     <Field label="First name" error={pErrors.firstName}>
                                         <input value={firstName} onChange={(e) => setFirstName(e.target.value)} style={inputStyle(!!pErrors.firstName)} />
                                     </Field>

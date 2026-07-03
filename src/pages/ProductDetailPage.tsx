@@ -16,6 +16,7 @@ import { StarRating } from '../components/products/StarRating';
 import type { ProductResponse, ReviewResponse } from '../types/product';
 import { submitReview, updateReview, deleteReview } from '../api/reviews';
 import { ReviewForm } from '../components/products/ReviewForm';
+import { Skeleton } from '../components/ui/Skeleton';
 
 export function ProductDetailPage() {
     // 1) Read the :id from the URL ("/products/42" -> id === "42"), convert to a number.
@@ -112,7 +113,19 @@ export function ProductDetailPage() {
     if (isLoading) {
         return (
             <Shell>
-                <p style={{ color: '#6b6878' }}>Loading product…</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
+                    <Skeleton className="aspect-square w-full rounded-[20px]" />
+                    <div className="flex flex-col gap-4">
+                        <Skeleton className="h-8 w-4/5" />
+                        <Skeleton className="h-4 w-1/3" />
+                        <Skeleton className="h-4 w-1/4" />
+                        <Skeleton className="h-9 w-1/3" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-2/3" />
+                        <Skeleton className="mt-2 h-12 w-40 rounded-xl" />
+                    </div>
+                </div>
             </Shell>
         );
     }
@@ -170,7 +183,7 @@ export function ProductDetailPage() {
             </Link>
 
             {/* Two-column layout: image left, info right */}
-            <div style={layoutStyle}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
                 {/* LEFT: image or placeholder */}
                 <div style={imageWrapStyle}>
                     {product.imageUrl ? (
@@ -418,7 +431,6 @@ function Spinner() {
 }
 
 // ---------- shared inline styles ----------
-const layoutStyle: CSSProperties = { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 40, alignItems: 'start' };
 const imageWrapStyle: CSSProperties = { width: '100%', aspectRatio: '1/1', background: 'radial-gradient(circle at 50% 30%, #fbfaff, #efebf8)', border: '1px solid #eceaf2', borderRadius: 20, overflow: 'hidden' };
 const sectionTitleStyle: CSSProperties = { fontFamily: "'Outfit',sans-serif", fontWeight: 700, fontSize: 16, color: '#15131f', margin: '0 0 8px' };
 const addBtnStyle: CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 6, padding: '13px 22px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#8d6cff,#7c5cff)', color: '#fff', fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 15, fontWeight: 700, boxShadow: '0 10px 22px -10px rgba(124,92,255,.7)' };

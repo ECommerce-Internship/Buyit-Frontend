@@ -4,6 +4,7 @@ import type { CSSProperties } from 'react';
 import toast from 'react-hot-toast';
 import { useInventory, useUpdateStock } from '../../hooks/useAdminData';
 import { AdminTabs } from '../../components/admin/AdminTabs';
+import { Skeleton } from '../../components/ui/Skeleton';
 
 export function AdminInventoryPage() {
     const { data: items = [], isLoading, isError } = useInventory();
@@ -50,7 +51,30 @@ export function AdminInventoryPage() {
                 />
 
                 {isLoading ? (
-                    <div style={panel}>Loading inventory…</div>
+                    <div style={{ overflowX: 'auto', ...panel, padding: 0 }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+                            <thead>
+                                <tr style={{ textAlign: 'left', color: 'rgba(255,255,255,0.6)' }}>
+                                    <th style={th}>Product</th>
+                                    <th style={th}>SKU</th>
+                                    <th style={th}>Current stock</th>
+                                    <th style={th}>Threshold</th>
+                                    <th style={th}>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {Array.from({ length: 8 }).map((_, i) => (
+                                    <tr key={i} style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                                        <td style={td}><Skeleton className="h-4 w-36" style={darkTone} /></td>
+                                        <td style={td}><Skeleton className="h-4 w-20" style={darkTone} /></td>
+                                        <td style={td}><Skeleton className="h-4 w-12" style={darkTone} /></td>
+                                        <td style={td}><Skeleton className="h-4 w-10" style={darkTone} /></td>
+                                        <td style={td}><Skeleton className="h-5 w-20 rounded-full" style={darkTone} /></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 ) : isError ? (
                     <div style={{ ...panel, color: '#ff8fa3' }}>Couldn’t load inventory. Refresh the page.</div>
                 ) : filtered.length === 0 ? (
@@ -135,6 +159,7 @@ const panel: CSSProperties = {
 };
 const th: CSSProperties = { padding: '12px 14px', fontWeight: 600, fontSize: 12.5, textTransform: 'uppercase', letterSpacing: 0.4 };
 const td: CSSProperties = { padding: '10px 14px', verticalAlign: 'middle' };
+const darkTone: CSSProperties = { backgroundColor: 'rgba(255,255,255,0.08)' };
 const input: CSSProperties = {
     boxSizing: 'border-box', padding: '10px 12px', fontSize: 14.5, fontFamily: 'inherit', color: '#fff',
     background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 11, outline: 'none',

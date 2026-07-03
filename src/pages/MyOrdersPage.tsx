@@ -6,7 +6,6 @@ import {
     ChevronLeft,
     ChevronRight,
     Clock,
-    Loader2,
     PackageCheck,
     ReceiptText,
     ShoppingBag,
@@ -14,6 +13,8 @@ import {
 } from 'lucide-react';
 
 import { fetchMyOrders } from '../api/orders';
+import { Skeleton } from '../components/ui/Skeleton';
+import { EmptyState } from '../components/ui/EmptyState';
 
 const PAGE_SIZE = 10;
 
@@ -124,8 +125,31 @@ export function MyOrdersPage() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-[linear-gradient(180deg,#f7f6fb_0%,#fff7f2_100%)]">
-                <Loader2 className="h-10 w-10 animate-spin text-[#ff5f6d]" />
+            <div className="min-h-screen bg-[linear-gradient(180deg,#f7f6fb_0%,#fff7f2_100%)] px-4 py-10">
+                <div className="mx-auto max-w-7xl">
+                    <div className="mb-8 border-b border-[#d7d1e8] pb-5">
+                        <Skeleton className="h-4 w-40" />
+                        <Skeleton className="mt-4 h-8 w-48" />
+                        <Skeleton className="mt-2 h-4 w-72" />
+                    </div>
+                    <div className="overflow-hidden rounded-2xl border border-[#efe8f6] bg-white shadow-sm">
+                        <div className="border-b border-[#f0edf7] px-6 py-5">
+                            <Skeleton className="h-5 w-40" />
+                        </div>
+                        <div className="divide-y divide-[#f0edf7]">
+                            {Array.from({ length: 8 }).map((_, i) => (
+                                <div key={i} className="grid grid-cols-6 items-center gap-4 px-6 py-5">
+                                    <Skeleton className="h-4 w-20" />
+                                    <Skeleton className="h-4 w-24" />
+                                    <Skeleton className="h-5 w-16 rounded-full" />
+                                    <Skeleton className="h-5 w-16 rounded-full" />
+                                    <Skeleton className="h-4 w-10" />
+                                    <Skeleton className="h-4 w-14" />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -149,38 +173,13 @@ export function MyOrdersPage() {
         return (
             <div className="min-h-screen bg-[linear-gradient(180deg,#f7f6fb_0%,#fff7f2_100%)] px-4 py-10">
                 <div className="mx-auto max-w-5xl">
-                    <motion.div
-                        initial={{ opacity: 0, y: 24 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.45, ease: 'easeOut' }}
-                        className="rounded-3xl border border-[#efe8f6] bg-white p-10 text-center shadow-sm"
-                    >
-                        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#fff1ea] text-[#ff5f6d]">
-                            <ShoppingCart className="h-9 w-9" />
-                        </div>
-
-                        <h1 className="mt-6 text-3xl font-bold text-gray-900">
-                            You have no orders yet
-                        </h1>
-
-                        <p className="mx-auto mt-3 max-w-md text-gray-500">
-                            Once you place an order, it will appear here with its status,
-                            payment information, and details.
-                        </p>
-
-                        <motion.div
-                            whileHover={{ scale: 1.03 }}
-                            whileTap={{ scale: 0.97 }}
-                            className="mt-8 inline-block"
-                        >
-                            <Link
-                                to="/products"
-                                className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#ff7a45] to-[#ff416c] px-6 py-3 font-semibold text-white shadow-[0_16px_35px_rgba(255,95,109,0.28)] transition duration-300"
-                            >
-                                Shop Now
-                            </Link>
-                        </motion.div>
-                    </motion.div>
+                    <EmptyState
+                        icon={ShoppingCart}
+                        title="You have no orders yet"
+                        description="Once you place an order, it will appear here with its status, payment information, and details."
+                        ctaLabel="Shop Now"
+                        ctaTo="/products"
+                    />
                 </div>
             </div>
         );
