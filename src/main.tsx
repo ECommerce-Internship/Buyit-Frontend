@@ -21,7 +21,7 @@ createRoot(document.getElementById('root')!).render(
                     <AuthModalProvider>
                         <App />
                         {/* One Toaster for the whole app; toast.success/error render here. */}
-                        <Toaster position="top-right" />
+                        <Toaster position="top-center" />
                     </AuthModalProvider>
                 </AuthProvider>
             </BrowserRouter>

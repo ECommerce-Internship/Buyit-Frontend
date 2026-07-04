@@ -22,56 +22,61 @@ import { StorefrontPage } from './pages/StorefrontPage';
 import { ChatWidget } from './components/chat/ChatWidget';
 import { MyOrdersPage } from './pages/MyOrdersPage';
 import { OrderDetailPage } from './pages/OrderDetailPage';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import type { ReactElement } from 'react';
+
+// Wraps a page element in its own ErrorBoundary so one broken page
+// can't take down the whole app / other routes.
+function page(element: ReactElement): ReactElement {
+    return <ErrorBoundary>{element}</ErrorBoundary>;
+}
 
 function App() {
     return (
         <>
-        <Routes>
-            {/* Public: the marketing landing page; its CTAs open the global auth modal. */}
-            <Route path="/" element={<LandingPage />} />
+            <Routes>
+                {/* Public: the marketing landing page; its CTAs open the global auth modal. */}
+                <Route path="/" element={page(<LandingPage />)} />
 
-            {/* Public: the marketplace catalogue (GET /products is anonymous). */}
-            <Route path="/products" element={<ProductListingPage />} />
+                {/* Public: the marketplace catalogue (GET /products is anonymous). */}
+                <Route path="/products" element={page(<ProductListingPage />)} />
 
-            {/* Public: a single product's detail page (TB-59). */}
-            <Route path="/products/:id" element={<ProductDetailPage />} />
-            {/* Public: one store's storefront — its header + only its products (TB-141). */}
-            <Route path="/stores/:slug" element={<StorefrontPage />} />
-            {/* Public: where the backend redirects after Google sign-in (TB-133). */}
-            <Route path="/auth/callback" element={<GoogleCallbackPage />} />
+                {/* Public: a single product's detail page (TB-59). */}
+                <Route path="/products/:id" element={page(<ProductDetailPage />)} />
+                {/* Public: one store's storefront — its header + only its products (TB-141). */}
+                <Route path="/stores/:slug" element={page(<StorefrontPage />)} />
+                {/* Public: where the backend redirects after Google sign-in (TB-133). */}
+                <Route path="/auth/callback" element={page(<GoogleCallbackPage />)} />
 
-            {/* Must be logged in for anything below. (/products is NO LONGER here.) */}
-            <Route element={<ProtectedRoute />}>
-                {/* Cart / checkout / order confirmation. */}
-                <Route path="/cart" element={<CartPage />} />
-                <Route path="/checkout" element={<CheckoutPage />} />
-                <Route path="/orders/:id/confirmation" element={<OrderConfirmationPage />} />
-                <Route path="/account" element={<AccountPage />} />
-                <Route path="/orders" element={<MyOrdersPage />} />
-                <Route path="/orders/:id" element={<OrderDetailPage />} />
+                {/* Must be logged in for anything below. (/products is NO LONGER here.) */}
+                <Route element={<ProtectedRoute />}>
+                    {/* Cart / checkout / order confirmation. */}
+                    <Route path="/cart" element={page(<CartPage />)} />
+                    <Route path="/checkout" element={page(<CheckoutPage />)} />
+                    <Route path="/orders/:id/confirmation" element={page(<OrderConfirmationPage />)} />
+                    <Route path="/account" element={page(<AccountPage />)} />
+                    <Route path="/orders" element={page(<MyOrdersPage />)} />
+                    <Route path="/orders/:id" element={page(<OrderDetailPage />)} />
 
-                {/* Logged in (any role): your own account/profile (TB-134). */}
-                <Route path="/account" element={<AccountPage />} />
+                    {/* Logged in AND Admin. */}
+                    <Route element={<AdminRoute />}>
+                        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+                        <Route path="/admin/products" element={page(<AdminProductsPage />)} />
+                        <Route path="/admin/dashboard" element={page(<AdminDashboardPage />)} />
+                        <Route path="/admin/orders" element={page(<AdminOrdersPage />)} />
+                        <Route path="/admin/inventory" element={page(<AdminInventoryPage />)} />
+                        <Route path="/admin/payments" element={page(<AdminPaymentsPage />)} />
+                        <Route path="/admin/categories" element={page(<AdminCategoriesPage />)} />
+                        <Route path="/admin/stores" element={page(<AdminStoresPage />)} />
+                    </Route>
 
-                {/* Logged in AND Admin. */}
-                <Route element={<AdminRoute />}>
-                    <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-                    <Route path="/admin/products" element={<AdminProductsPage />} />
-                    <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-                    <Route path="/admin/orders" element={<AdminOrdersPage />} />
-                    <Route path="/admin/inventory" element={<AdminInventoryPage />} />
-                    <Route path="/admin/payments" element={<AdminPaymentsPage />} />
-                    <Route path="/admin/categories" element={<AdminCategoriesPage />} />
-                    <Route path="/admin/stores" element={<AdminStoresPage />} />
+                    {/* Logged in AND Seller. */}
+                    <Route element={<SellerRoute />}>
+                        <Route path="/seller" element={page(<SellerDashboardPage />)} />
+                    </Route>
                 </Route>
-
-                {/* Logged in AND Seller. */}
-                <Route element={<SellerRoute />}>
-                    <Route path="/seller" element={<SellerDashboardPage />} />
-                </Route>
-            </Route>
-        </Routes>
-        <ChatWidget />
+            </Routes>
+            <ChatWidget />
         </>
     );
 }

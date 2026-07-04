@@ -11,29 +11,29 @@ function CartSteps() {
     const activeIndex = 2;
 
     return (
-        <div className="mb-10 flex justify-center">
-            <div className="flex items-center gap-4">
+        <div className="mb-10 flex justify-center px-2">
+            <div className="flex items-center gap-2 sm:gap-4">
                 {steps.map((step, i) => {
                     const isActive = i === activeIndex;
                     const isDone = i < activeIndex;
 
                     return (
-                        <div key={step} className="flex items-center gap-4">
-                            <div className="flex items-center gap-2">
+                        <div key={step} className="flex items-center gap-2 sm:gap-4">
+                            <div className="flex items-center gap-1 sm:gap-2">
                                 <span
-                                    className={`h-2 w-2 rounded-full transition-all duration-500 ${isActive
-                                            ? 'animate-pulse scale-100 bg-[#ff5f6d] shadow-[0_0_0_4px_rgba(255,95,109,0.18)]'
-                                            : isDone
-                                                ? 'scale-100 bg-[#ff7a45]'
-                                                : 'scale-75 bg-gray-300'
+                                    className={`h-2 w-2 shrink-0 rounded-full transition-all duration-500 ${isActive
+                                        ? 'animate-pulse scale-100 bg-[#ff5f6d] shadow-[0_0_0_4px_rgba(255,95,109,0.18)]'
+                                        : isDone
+                                            ? 'scale-100 bg-[#ff7a45]'
+                                            : 'scale-75 bg-gray-300'
                                         }`}
                                 />
                                 <span
-                                    className={`text-lg font-semibold transition-colors duration-500 ${isActive
-                                            ? 'bg-gradient-to-r from-[#ff7a45] to-[#ff416c] bg-clip-text text-transparent'
-                                            : isDone
-                                                ? 'text-gray-500'
-                                                : 'text-gray-400'
+                                    className={`text-sm sm:text-lg font-semibold whitespace-nowrap transition-colors duration-500 ${isActive
+                                        ? 'bg-gradient-to-r from-[#ff7a45] to-[#ff416c] bg-clip-text text-transparent'
+                                        : isDone
+                                            ? 'text-gray-500'
+                                            : 'text-gray-400'
                                         }`}
                                 >
                                     {step}
@@ -41,7 +41,7 @@ function CartSteps() {
                             </div>
 
                             {i < steps.length - 1 && (
-                                <div className="relative h-px w-20 overflow-hidden border-t-2 border-dashed border-[#d7d1e8]">
+                                <div className="relative h-px w-6 sm:w-20 shrink-0 overflow-hidden border-t-2 border-dashed border-[#d7d1e8]">
                                     <div
                                         className={`absolute inset-y-0 left-0 border-t-2 border-dashed border-[#ff7a45] transition-all duration-700 ease-out ${i < activeIndex ? 'w-full' : 'w-0'
                                             }`}

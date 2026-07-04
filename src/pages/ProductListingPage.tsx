@@ -10,7 +10,8 @@ import { useCategories } from '../hooks/useCategories';
 import { useDebounce } from '../hooks/useDebounce';
 import { ProductCard } from '../components/products/ProductCard';
 import { SkeletonCard } from '../components/products/SkeletonCard';
-import { EmptyState } from '../components/products/EmptyState';
+import { EmptyState } from '../components/ui/EmptyState';
+import { SearchX } from 'lucide-react';
 import { Pagination } from '../components/products/Pagination';
 
 const PAGE_SIZE = 12;
@@ -97,7 +98,7 @@ export function ProductListingPage() {
         <div style={{ minHeight: '100vh', width: '100%', background: '#f7f6fb', fontFamily: "'Plus Jakarta Sans',sans-serif", color: '#15131f', paddingBottom: 80 }}>
             {/* sticky header with the landing logo + working search */}
             <header style={{ position: 'sticky', top: 0, zIndex: 20, background: 'rgba(247,246,251,.86)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderBottom: '1px solid #eceaf2' }}>
-                <div style={{ maxWidth: 1180, margin: '0 auto', padding: '13px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20 }}>
+                <div style={{ maxWidth: 1180, margin: '0 auto', padding: '13px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
                         <Logo height={26} to="/" />
                         <span style={{ fontSize: 13, color: '#9a97a8', fontWeight: 500 }}>/ Catalogue</span>
@@ -148,11 +149,15 @@ export function ProductListingPage() {
                     <div style={{ textAlign: 'center', padding: 64, color: '#c0392b' }}>Something went wrong loading products. Please try again.</div>
                 ) : isLoading ? (
                     <div style={gridStyle}>{Array.from({ length: PAGE_SIZE }).map((_, i) => <SkeletonCard key={i} />)}</div>
-                ) : !data || data.items.length === 0 ? (
-                    <div style={{ background: '#fff', border: '1px solid #eceaf2', borderRadius: 18, overflow: 'hidden' }}>
-                        <EmptyState onReset={resetFilters} />
-                    </div>
-                ) : (
+                    ) : !data || data.items.length === 0 ? (
+                        <EmptyState
+                            icon={SearchX}
+                            title="No products found"
+                            description="Try adjusting your filters — or reset to see everything in the catalogue."
+                            ctaLabel="Reset filters"
+                            onCtaClick={resetFilters}
+                        />
+                    ) : (
                     <>
                         <div style={gridStyle}>{data.items.map((p) => <ProductCard key={p.id} product={p} />)}</div>
                         <Pagination page={data.page} totalPages={data.totalPages} hasPrevious={data.hasPrevious} hasNext={data.hasNext} onPageChange={(n) => setParam('page', String(n))} />

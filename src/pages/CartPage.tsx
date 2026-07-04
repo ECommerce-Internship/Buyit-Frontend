@@ -27,6 +27,7 @@ import {
     removeCoupon,
     updateCartItem,
 } from '../api/cart';
+import { EmptyState } from '../components/ui/EmptyState';
 /* ---------------------------------------------------------------------- */
 /* Rolling text animation: best for quantity / percentages                 */
 /* ---------------------------------------------------------------------- */
@@ -170,16 +171,16 @@ function CartSteps() {
     const steps = ['Cart', 'Checkout', 'Payment'];
     const activeIndex = 0;
     return (
-        <div className="mb-10 flex justify-center">
-            <div className="flex items-center gap-4">
+        <div className="mb-10 flex justify-center px-2">
+            <div className="flex items-center gap-2 sm:gap-4">
                 {steps.map((step, i) => {
                     const isActive = i === activeIndex;
                     const isDone = i < activeIndex;
                     return (
-                        <div key={step} className="flex items-center gap-4">
-                            <div className="flex items-center gap-2">
+                        <div key={step} className="flex items-center gap-2 sm:gap-4">
+                            <div className="flex items-center gap-1 sm:gap-2">
                                 <span
-                                    className={`h-2 w-2 rounded-full transition-all duration-500 ${isActive
+                                    className={`h-2 w-2 shrink-0 rounded-full transition-all duration-500 ${isActive
                                         ? 'scale-100 bg-[#ff5f6d] shadow-[0_0_0_4px_rgba(255,95,109,0.18)] animate-pulse'
                                         : isDone
                                             ? 'scale-100 bg-[#ff7a45]'
@@ -187,7 +188,7 @@ function CartSteps() {
                                         }`}
                                 />
                                 <span
-                                    className={`text-lg font-semibold transition-colors duration-500 ${isActive
+                                    className={`text-sm sm:text-lg font-semibold whitespace-nowrap transition-colors duration-500 ${isActive
                                         ? 'bg-gradient-to-r from-[#ff7a45] to-[#ff416c] bg-clip-text text-transparent'
                                         : 'text-gray-400'
                                         }`}
@@ -196,7 +197,7 @@ function CartSteps() {
                                 </span>
                             </div>
                             {i < steps.length - 1 && (
-                                <div className="relative h-px w-20 overflow-hidden border-t-2 border-dashed border-[#d7d1e8]">
+                                <div className="relative h-px w-6 sm:w-20 shrink-0 overflow-hidden border-t-2 border-dashed border-[#d7d1e8]">
                                     <div
                                         className={`absolute inset-y-0 left-0 border-t-2 border-dashed border-[#ff7a45] transition-all duration-700 ease-out ${i < activeIndex ? 'w-full' : 'w-0'
                                             }`}
@@ -471,6 +472,33 @@ export function CartPage() {
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        );
+    }
+    if (isError) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[linear-gradient(180deg,#f7f6fb_0%,#fff7f2_100%)] px-4">
+                <div className="rounded-2xl bg-white p-8 text-center shadow-sm border border-[#efe8f6]">
+                    <p className="text-lg font-semibold text-gray-900">Failed to load cart.</p>
+                    <p className="mt-2 text-sm text-gray-500">
+                        Please refresh the page and try again.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+    if (isEmpty) {
+        return (
+            <div className="min-h-screen bg-[linear-gradient(180deg,#f7f6fb_0%,#fff7f2_100%)] flex items-center justify-center px-4 py-10">
+                <div className="w-full max-w-md">
+                    <EmptyState
+                        icon={ShoppingCart}
+                        title="Your cart is empty"
+                        description="Looks like you have not added any products to your cart yet."
+                        ctaLabel="Shop Now"
+                        ctaTo="/products"
+                    />
                 </div>
             </div>
         );

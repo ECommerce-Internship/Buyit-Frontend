@@ -26,9 +26,10 @@ const segActive: CSSProperties = { ...segBase, background: 'linear-gradient(120d
 const segIdle: CSSProperties = { ...segBase, background: 'transparent', color: 'rgba(255,255,255,0.6)' };
 
 const fieldStyle = (hasErr: boolean, extra: CSSProperties = {}): CSSProperties => ({
-  width: '100%', padding: '12px 13px', fontSize: 14.5, fontFamily: 'inherit', color: '#fff',
-  background: 'rgba(255,255,255,0.05)', border: `1px solid ${hasErr ? '#ff5d7a' : 'rgba(255,255,255,0.13)'}`,
-  borderRadius: 12, outline: 'none', transition: 'border-color .15s, box-shadow .15s', ...extra,
+    width: '100%', padding: '12px 13px', fontSize: 14.5, fontFamily: 'inherit', color: '#fff',
+    background: 'rgba(255,255,255,0.05)', borderWidth: 1, borderStyle: 'solid',
+    borderColor: hasErr ? '#ff5d7a' : 'rgba(255,255,255,0.13)',
+    borderRadius: 12, outline: 'none', transition: 'border-color .15s, box-shadow .15s', ...extra,
 });
 const focusStyle: CSSProperties = { borderColor: '#8b6cff', boxShadow: '0 0 0 3px rgba(139,108,255,0.2)' };
 
@@ -235,14 +236,14 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
             </div>
 
             {/* Login / Register tabs */}
-            <div style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 13, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', marginBottom: 14 }}>
+            <div style={{ display: 'flex', gap: 8, padding: 4, borderRadius: 13, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', marginBottom: 14 }}>
               <button onClick={() => { setMode('login'); resetMsgs(); }} style={isLogin ? segActive : segIdle}>Log in</button>
               <button onClick={() => { setMode('register'); resetMsgs(); }} style={isRegister ? segActive : segIdle}>Sign up</button>
             </div>
 
             {/* Buyer / Seller segmented (register only) */}
             {isRegister && (
-              <div style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 13, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', marginBottom: 18 }}>
+              <div style={{ display: 'flex', gap: 8, padding: 4, borderRadius: 13, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', marginBottom: 18 }}>
                 <button onClick={() => { setRole('buyer'); resetMsgs(); }} style={!isSeller ? segActive : segIdle}>&#128722; I'm a Buyer</button>
                 <button onClick={() => { setRole('seller'); resetMsgs(); }} style={isSeller ? segActive : segIdle}>&#127978; I'm a Seller</button>
               </div>

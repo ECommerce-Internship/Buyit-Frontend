@@ -6,6 +6,7 @@ import { useCategories, useDeleteCategory } from '../../hooks/useCategories';
 import { AdminTabs } from '../../components/admin/AdminTabs';
 import { CategoryFormModal } from './CategoryFormModal';
 import type { CategoryResponse } from '../../types/product';
+import { Skeleton } from '../../components/ui/Skeleton';
 
 export function AdminCategoriesPage() {
     const { data: categories = [], isLoading, isError } = useCategories();
@@ -37,7 +38,28 @@ export function AdminCategoriesPage() {
 
                 {/* TABLE */}
                 {isLoading ? (
-                    <div style={panel}>Loading categories…</div>
+                    <div style={{ overflowX: 'auto', ...panel, padding: 0 }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+                            <thead>
+                                <tr style={{ textAlign: 'left', color: 'rgba(255,255,255,0.6)' }}>
+                                    <th style={th}>Name</th>
+                                    <th style={th}>Parent</th>
+                                    <th style={th}>Subcategories</th>
+                                    <th style={{ ...th, textAlign: 'right' }}>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {Array.from({ length: 6 }).map((_, i) => (
+                                    <tr key={i} style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                                        <td style={td}><Skeleton className="h-4 w-28" style={darkTone} /></td>
+                                        <td style={td}><Skeleton className="h-4 w-20" style={darkTone} /></td>
+                                        <td style={td}><Skeleton className="h-4 w-8" style={darkTone} /></td>
+                                        <td style={{ ...td, textAlign: 'right' }}><Skeleton className="ml-auto h-8 w-24 rounded-lg" style={darkTone} /></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 ) : isError ? (
                     <div style={{ ...panel, color: '#ff8fa3' }}>Couldn’t load categories. Refresh the page.</div>
                 ) : categories.length === 0 ? (
@@ -124,6 +146,7 @@ const panel: CSSProperties = {
 };
 const th: CSSProperties = { padding: '12px 14px', fontWeight: 600, fontSize: 12.5, textTransform: 'uppercase', letterSpacing: 0.4 };
 const td: CSSProperties = { padding: '10px 14px', verticalAlign: 'middle' };
+const darkTone: CSSProperties = { backgroundColor: 'rgba(255,255,255,0.08)' };
 const smallBtn: CSSProperties = {
     padding: '6px 12px', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, color: '#fff',
     background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 9, cursor: 'pointer',
