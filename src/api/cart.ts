@@ -8,6 +8,9 @@ export interface CartItem {
     unitPrice: number;
     quantity: number;
     lineTotal: number;
+    storeId: number;
+    storeName: string;
+    quantityInStock: number;
 }
 
 export interface Cart {

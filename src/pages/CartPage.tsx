@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Footer } from '../components/Footer';
 import {
+    AlertTriangle,
     ArrowLeft,
     ChevronRight,
     Check,
@@ -11,6 +12,7 @@ import {
     Plus,
     ShoppingCart,
     Sparkles,
+    Store,
     Tag,
     Trash2,
     X,
@@ -27,6 +29,7 @@ import {
     removeCoupon,
     updateCartItem,
 } from '../api/cart';
+import type { CartItem } from '../api/cart';
 import { EmptyState } from '../components/ui/EmptyState';
 /* ---------------------------------------------------------------------- */
 /* Rolling text animation: best for quantity / percentages                 */
@@ -347,6 +350,17 @@ export function CartPage() {
         queryFn: fetchCart,
         refetchOnWindowFocus: true,
     });
+    const storeGroups = useMemo(() => {
+        if (!cart) return [];
+        const map = new Map<number, { storeId: number; storeName: string; items: CartItem[] }>();
+        for (const item of cart.items) {
+            if (!map.has(item.storeId)) {
+                map.set(item.storeId, { storeId: item.storeId, storeName: item.storeName, items: [] });
+            }
+            map.get(item.storeId)!.items.push(item);
+        }
+        return Array.from(map.values());
+    }, [cart]);
     const updateQuantityMutation = useMutation({
         mutationFn: ({ productId, quantity }: { productId: number; quantity: number }) =>
             updateCartItem(productId, quantity),
@@ -611,127 +625,149 @@ export function CartPage() {
                                 </span>
                                 <span className="hidden md:block" />
                             </div>
-                            <div className="divide-y divide-[#f0edf7]">
-                                <AnimatePresence initial={false} mode="popLayout">
-                                    {cart.items.map((item, index) => {
-                                        const isPending = pendingProductId === item.productId;
-                                        const itemDirection = quantityDirection[item.productId];
-                                        return (
-                                            <motion.div
-                                                key={item.productId}
-                                                layout
-                                                custom={index}
-                                                variants={cartItemVariants}
-                                                initial="hidden"
-                                                animate="visible"
-                                                exit="exit"
-                                                className="grid grid-cols-1 gap-5 px-6 py-6 md:grid-cols-[minmax(0,1fr)_148px_120px_80px] md:items-center"
-                                            >
-                                                <div className="flex min-w-0 items-center gap-5">
+                            {storeGroups.map((group) => (
+                                <div key={group.storeId}>
+                                    <div className="flex items-center gap-2 border-b border-[#f0edf7] bg-[#faf9fc] px-6 py-3">
+                                        <Store className="h-4 w-4 text-[#ff5f6d]" />
+                                        <span className="text-sm font-bold text-gray-700">{group.storeName}</span>
+                                        <span className="text-xs text-gray-400">
+                                            ({group.items.length} {group.items.length === 1 ? 'item' : 'items'})
+                                        </span>
+                                    </div>
+                                    <div className="divide-y divide-[#f0edf7]">
+                                        <AnimatePresence initial={false} mode="popLayout">
+                                            {group.items.map((item, index) => {
+                                                const isPending = pendingProductId === item.productId;
+                                                const itemDirection = quantityDirection[item.productId];
+                                                return (
                                                     <motion.div
-                                                        whileHover={{ scale: 1.05 }}
-                                                        transition={{ duration: 0.25, ease: 'easeOut' }}
-                                                        className="h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-[#f0edf7] bg-[#faf9fc]"
+                                                        key={item.productId}
+                                                        layout
+                                                        custom={index}
+                                                        variants={cartItemVariants}
+                                                        initial="hidden"
+                                                        animate="visible"
+                                                        exit="exit"
+                                                        className="grid grid-cols-1 gap-5 px-6 py-6 md:grid-cols-[minmax(0,1fr)_148px_120px_80px] md:items-center"
                                                     >
-                                                        {item.imageUrl ? (
-                                                            <img
-                                                                src={item.imageUrl}
-                                                                alt={item.productName}
-                                                                className="h-full w-full object-cover"
-                                                            />
-                                                        ) : (
-                                                            <div className="flex h-full w-full items-center justify-center">
-                                                                <ShoppingCart className="h-9 w-9 text-gray-300" />
+                                                        <div className="flex min-w-0 items-center gap-5">
+                                                            <motion.div
+                                                                whileHover={{ scale: 1.05 }}
+                                                                transition={{ duration: 0.25, ease: 'easeOut' }}
+                                                                className="h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-[#f0edf7] bg-[#faf9fc]"
+                                                            >
+                                                                {item.imageUrl ? (
+                                                                    <img
+                                                                        src={item.imageUrl}
+                                                                        alt={item.productName}
+                                                                        className="h-full w-full object-cover"
+                                                                    />
+                                                                ) : (
+                                                                    <div className="flex h-full w-full items-center justify-center">
+                                                                        <ShoppingCart className="h-9 w-9 text-gray-300" />
+                                                                    </div>
+                                                                )}
+                                                            </motion.div>
+                                                            <div className="min-w-0">
+                                                                <h3 className="truncate font-bold text-gray-900">
+                                                                    {item.productName}
+                                                                </h3>
+                                                                {item.sku && (
+                                                                    <p className="mt-1 truncate text-sm text-gray-400">
+                                                                        SKU: {item.sku}
+                                                                    </p>
+                                                                )}
+                                                                <p className="mt-2 text-sm text-gray-600">
+                                                                    Unit price:{' '}
+                                                                    <AnimatedCounterText
+                                                                        value={item.unitPrice}
+                                                                        formatter={formatMoney}
+                                                                        className="font-semibold text-gray-900"
+                                                                    />
+                                                                </p>
+                                                                {item.quantityInStock <= 0 ? (
+                                                                    <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
+                                                                        <AlertTriangle className="h-3 w-3" />
+                                                                        Out of stock
+                                                                    </p>
+                                                                ) : item.quantity > item.quantityInStock ? (
+                                                                    <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-600">
+                                                                        <AlertTriangle className="h-3 w-3" />
+                                                                        Only {item.quantityInStock} left in stock
+                                                                    </p>
+                                                                ) : null}
                                                             </div>
-                                                        )}
-                                                    </motion.div>
-                                                    <div className="min-w-0">
-                                                        <h3 className="truncate font-bold text-gray-900">
-                                                            {item.productName}
-                                                        </h3>
-                                                        {item.sku && (
-                                                            <p className="mt-1 truncate text-sm text-gray-400">
-                                                                SKU: {item.sku}
-                                                            </p>
-                                                        )}
-                                                        <p className="mt-2 text-sm text-gray-600">
-                                                            Unit price:{' '}
+                                                        </div>
+                                                        <div className="flex w-full items-center justify-start gap-2 md:w-[148px] md:justify-start">
+                                                            <motion.button
+                                                                whileTap={{ scale: 0.9 }}
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    handleMinus(item.productId, item.quantity)
+                                                                }
+                                                                disabled={isPending}
+                                                                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-[#e7e1f2] text-gray-600 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#ffb199] hover:bg-[#fff7f2] hover:text-[#ff5f6d] hover:shadow-[0_8px_18px_rgba(255,95,109,0.14)] disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-50 disabled:shadow-none"
+                                                                aria-label="Decrease quantity"
+                                                            >
+                                                                <Minus className="h-4 w-4" />
+                                                            </motion.button>
+                                                            <div className="relative flex h-9 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#e7e1f2] bg-white text-sm font-semibold text-gray-900">
+                                                                <QuantityBumpIndicator quantity={item.quantity} />
+                                                                <AnimatedRollingText
+                                                                    value={item.quantity}
+                                                                    direction={itemDirection}
+                                                                    className="font-semibold text-gray-900"
+                                                                />
+                                                            </div>
+                                                            <motion.button
+                                                                whileTap={{ scale: 0.9 }}
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    handlePlus(item.productId, item.quantity)
+                                                                }
+                                                                disabled={isPending}
+                                                                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-[#e7e1f2] text-gray-600 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#ffb199] hover:bg-[#fff7f2] hover:text-[#ff5f6d] hover:shadow-[0_8px_18px_rgba(255,95,109,0.14)] disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-50 disabled:shadow-none"
+                                                                aria-label="Increase quantity"
+                                                            >
+                                                                <Plus className="h-4 w-4" />
+                                                            </motion.button>
+                                                            {isPending && (
+                                                                <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#ff5f6d]" />
+                                                            )}
+                                                        </div>
+                                                        <div className="md:text-right">
+                                                            <p className="text-sm text-gray-400">Line total</p>
                                                             <AnimatedCounterText
-                                                                value={item.unitPrice}
+                                                                value={item.lineTotal}
                                                                 formatter={formatMoney}
-                                                                className="font-semibold text-gray-900"
+                                                                className="font-bold text-gray-900"
                                                             />
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <div className="flex w-full items-center justify-start gap-2 md:w-[148px] md:justify-start">
-                                                    <motion.button
-                                                        whileTap={{ scale: 0.9 }}
-                                                        type="button"
-                                                        onClick={() =>
-                                                            handleMinus(item.productId, item.quantity)
-                                                        }
-                                                        disabled={isPending}
-                                                        className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-[#e7e1f2] text-gray-600 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#ffb199] hover:bg-[#fff7f2] hover:text-[#ff5f6d] hover:shadow-[0_8px_18px_rgba(255,95,109,0.14)] disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-50 disabled:shadow-none"
-                                                        aria-label="Decrease quantity"
-                                                    >
-                                                        <Minus className="h-4 w-4" />
-                                                    </motion.button>
-                                                    <div className="relative flex h-9 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#e7e1f2] bg-white text-sm font-semibold text-gray-900">
-                                                        <QuantityBumpIndicator quantity={item.quantity} />
-                                                        <AnimatedRollingText
-                                                            value={item.quantity}
-                                                            direction={itemDirection}
-                                                            className="font-semibold text-gray-900"
-                                                        />
-                                                    </div>
-                                                    <motion.button
-                                                        whileTap={{ scale: 0.9 }}
-                                                        type="button"
-                                                        onClick={() =>
-                                                            handlePlus(item.productId, item.quantity)
-                                                        }
-                                                        disabled={isPending}
-                                                        className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-[#e7e1f2] text-gray-600 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#ffb199] hover:bg-[#fff7f2] hover:text-[#ff5f6d] hover:shadow-[0_8px_18px_rgba(255,95,109,0.14)] disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-50 disabled:shadow-none"
-                                                        aria-label="Increase quantity"
-                                                    >
-                                                        <Plus className="h-4 w-4" />
-                                                    </motion.button>
-                                                    {isPending && (
-                                                        <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#ff5f6d]" />
-                                                    )}
-                                                </div>
-                                                <div className="md:text-right">
-                                                    <p className="text-sm text-gray-400">Line total</p>
-                                                    <AnimatedCounterText
-                                                        value={item.lineTotal}
-                                                        formatter={formatMoney}
-                                                        className="font-bold text-gray-900"
-                                                    />
-                                                </div>
-                                                <motion.button
-                                                    whileTap={{ scale: 0.9 }}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setPendingProductId(item.productId);
-                                                        removeItemMutation.mutate(item.productId);
-                                                    }}
-                                                    disabled={isPending}
-                                                    className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-[#f0dce2] text-gray-400 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#ffb3c1] hover:bg-[#fff1f4] hover:text-[#ff416c] hover:shadow-[0_10px_22px_rgba(255,65,108,0.14)] disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-50 disabled:shadow-none"
-                                                    aria-label="Remove item"
-                                                    title="Remove item"
-                                                >
-                                                    {isPending && removeItemMutation.isPending ? (
-                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                    ) : (
-                                                        <Trash2 className="h-4 w-4" />
-                                                    )}
-                                                </motion.button>
-                                            </motion.div>
-                                        );
-                                    })}
-                                </AnimatePresence>
-                            </div>
+                                                        </div>
+                                                        <motion.button
+                                                            whileTap={{ scale: 0.9 }}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setPendingProductId(item.productId);
+                                                                removeItemMutation.mutate(item.productId);
+                                                            }}
+                                                            disabled={isPending}
+                                                            className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-[#f0dce2] text-gray-400 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#ffb3c1] hover:bg-[#fff1f4] hover:text-[#ff416c] hover:shadow-[0_10px_22px_rgba(255,65,108,0.14)] disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-50 disabled:shadow-none"
+                                                            aria-label="Remove item"
+                                                            title="Remove item"
+                                                        >
+                                                            {isPending && removeItemMutation.isPending ? (
+                                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                            ) : (
+                                                                <Trash2 className="h-4 w-4" />
+                                                            )}
+                                                        </motion.button>
+                                                    </motion.div>
+                                                );
+                                            })}
+                                        </AnimatePresence>
+                                    </div>
+                                </div>
+                            ))}
                         </motion.div>
                         <motion.div
                             initial="hidden"
