@@ -30,6 +30,7 @@ export function ProductFormModal({ product, onClose }: Props) {
     const [description, setDescription] = useState(product?.description ?? '');
     const [seoTitle, setSeoTitle] = useState(product?.seoTitle ?? '');
     const [metaDescription, setMetaDescription] = useState(product?.metaDescription ?? '');
+    const [features, setFeatures] = useState<string[]>(product?.features ?? []);
     const [initialStock, setInitialStock] = useState('0');   // create-only
     const [storeId, setStoreId] = useState<number>(0);       // create-only; 0 = "not chosen yet"
 
@@ -101,10 +102,8 @@ export function ProductFormModal({ product, onClose }: Props) {
     // it just lands as a bullet list under the main paragraph.
     function useThisContent() {
         if (!suggestion) return;
-        const featuresBlock = suggestion.features.length
-            ? `\n\nKey features:\n${suggestion.features.map((f) => `• ${f}`).join('\n')}`
-            : '';
-        setDescription(`${suggestion.description}${featuresBlock}`);
+        setDescription(suggestion.description);
+        setFeatures(suggestion.features);
         setSeoTitle(suggestion.seoTitle);
         setMetaDescription(suggestion.metaDescription);
         setDrawerOpen(false);
@@ -127,6 +126,8 @@ export function ProductFormModal({ product, onClose }: Props) {
         if (!Number.isFinite(priceNum) || priceNum <= 0) return toast.error('Price must be greater than 0.');
         if (!categoryId) return toast.error('Please choose a category.');
 
+        const cleanFeatures = features.map((f) => f.trim()).filter(Boolean);
+
         if (isEdit) {
             update.mutate({
                 id: product!.id,
@@ -137,6 +138,7 @@ export function ProductFormModal({ product, onClose }: Props) {
                     categoryId,
                     seoTitle: seoTitle.trim() || null,
                     metaDescription: metaDescription.trim() || null,
+                    features: cleanFeatures.length ? cleanFeatures : null,
                 },
             });
         } else {
@@ -151,6 +153,7 @@ export function ProductFormModal({ product, onClose }: Props) {
                 initialStock: Number(initialStock) || 0,
                 seoTitle: seoTitle.trim() || null,
                 metaDescription: metaDescription.trim() || null,
+                features: cleanFeatures.length ? cleanFeatures : null,
             });
         }
     }
@@ -206,6 +209,10 @@ export function ProductFormModal({ product, onClose }: Props) {
                     )}
                     <Field label="Description">
                         <textarea value={description} onChange={(e) => setDescription(e.target.value)}
+                            rows={4} style={{ ...input, resize: 'vertical' }} />
+                    </Field>
+                    <Field label="Key features (one per line, optional)">
+                        <textarea value={features.join('\n')} onChange={(e) => setFeatures(e.target.value.split('\n'))}
                             rows={4} style={{ ...input, resize: 'vertical' }} />
                     </Field>
                     <Field label="SEO title (optional)">

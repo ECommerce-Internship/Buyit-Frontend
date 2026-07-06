@@ -23,6 +23,7 @@ export interface ProductResponse {
 
     seoTitle: string | null;
     metaDescription: string | null;
+    features: string[] | null;
 }
 
 // The generic "one page of results + paging metadata" shape the backend uses.
@@ -97,6 +98,7 @@ export interface CreateProductBody {
     initialStock: number;
     seoTitle?: string | null;
     metaDescription?: string | null;
+    features?: string[] | null;
 }
 
 // Body for PUT /api/v1/product/{id} (edit). Mirrors backend UpdateProductRequest EXACTLY.
@@ -109,6 +111,7 @@ export interface UpdateProductBody {
     categoryId: number;
     seoTitle?: string | null;
     metaDescription?: string | null;
+    features?: string[] | null;
 }
 
 // One rejected row from an Excel import (mirrors backend ImportRowError).

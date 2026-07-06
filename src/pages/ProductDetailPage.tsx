@@ -1,9 +1,9 @@
 // src/pages/ProductDetailPage.tsx
-import { useState, type CSSProperties, type ReactNode } from 'react';
+import { useState, useEffect, type CSSProperties, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Star } from 'lucide-react';
+import { Star, Check, Sparkles } from 'lucide-react';
 import Logo from '../components/Logo';
 import { useProduct } from '../hooks/useProduct';
 import { useProductReviews } from '../hooks/useProductReviews';
@@ -92,6 +92,37 @@ export function ProductDetailPage() {
         },
         onError: (err) => toast.error(reviewErrorMessage(err)),
     });
+    // SEO: while this page is open, use the product's AI-generated seoTitle/metaDescription
+    // for the page <title> and the meta description tag. Whatever was there before is restored
+    // on cleanup, so navigating away never leaves another page with this product's SEO text.
+    useEffect(() => {
+        if (!product) return;
+        const originalTitle = document.title;
+        if (product.seoTitle) document.title = product.seoTitle;
+
+        let metaTag = document.querySelector('meta[name="description"]');
+        const hadMetaTag = metaTag !== null;
+        const originalContent = metaTag?.getAttribute('content') ?? null;
+        if (product.metaDescription) {
+            if (!metaTag) {
+                metaTag = document.createElement('meta');
+                metaTag.setAttribute('name', 'description');
+                document.head.appendChild(metaTag);
+            }
+            metaTag.setAttribute('content', product.metaDescription);
+        }
+
+        return () => {
+            document.title = originalTitle;
+            if (product.metaDescription) {
+                if (hadMetaTag && originalContent !== null) {
+                    metaTag?.setAttribute('content', originalContent);
+                } else if (!hadMetaTag) {
+                    metaTag?.remove();
+                }
+            }
+        };
+    }, [product]);
 
     function handleAddToCart() {
         // Logged out -> invite to log in instead of firing a request that returns 401.
@@ -167,6 +198,11 @@ export function ProductDetailPage() {
     const otherReviews = myReview ? reviews.filter((r) => r.reviewId !== myReview.reviewId) : reviews;
     // Only logged-in Customers can write/own reviews (the backend restricts POST to Customers).
     const canWrite = isAuthenticated && user?.role === 'Customer';
+    // A proxy for "this product's content came from the AI generator" — today, only
+    // "Use This Content" in the admin form ever populates these three fields.
+    const hasAiContent = Boolean(
+        (product.features && product.features.length > 0) || product.seoTitle || product.metaDescription
+    );
 
     return (
         <Shell>
@@ -224,18 +260,19 @@ export function ProductDetailPage() {
                         <StockBadge quantity={product.quantityInStock} />
                     </div>
 
-                    {/* Description (graceful: if empty, show a soft fallback line) */}
+                    {/* Description (falls back to a placeholder if there's nothing to show yet) */}
                     <div>
-                        <h2 style={sectionTitleStyle}>Description</h2>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <h2 style={sectionTitleStyle}>Description</h2>
+                            {hasAiContent && <AiBadge />}
+                        </div>
                         <p style={{ fontSize: 15, lineHeight: 1.7, color: '#46434f', margin: 0, whiteSpace: 'pre-line' }}>
                             {product.description?.trim()
                                 ? product.description
-                                : 'No description available for this product yet.'}
+                                : 'Product details coming soon.'}
                         </p>
                     </div>
-
-                    {/* Key features — Gap #1: the API has no features array today, so this is
-                        written defensively and simply won't render until the backend adds it. */}
+                    {/* Key features: backed by ProductResponse.features. */}
                     <FeatureList product={product} />
 
                     {/* Add to Cart */}
@@ -397,33 +434,38 @@ function ReviewRow({ review }: { review: ReviewResponse }) {
     );
 }
 
-// Key-features list. Defensive: the current API has no `features`, so `extractFeatures`
-// returns [] and nothing renders. If the backend later adds a string[] `features` field,
-// add it to ProductResponse and to this function, and the list lights up automatically.
+// Key-features list, rendered with checkmarks. Backed by ProductResponse.features
+// (populated by Admin's "Use This Content" AI flow — see ProductFormModal.tsx).
 function FeatureList({ product }: { product: ProductResponse }) {
-    const features = extractFeatures(product);
+    const features = product.features ?? [];
     if (features.length === 0) return null;
     return (
         <div>
-            <h2 style={sectionTitleStyle}>Key features</h2>
-            <ul style={{ margin: 0, paddingLeft: 20, color: '#46434f', fontSize: 15, lineHeight: 1.8 }}>
-                {features.map((f, i) => <li key={i}>{f}</li>)}
+            <h2 style={sectionTitleStyle}>Key Features</h2>
+            <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {features.map((f, i) => (
+                    <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, color: '#46434f', fontSize: 15, lineHeight: 1.6 }}>
+                        <Check size={17} style={{ flexShrink: 0, marginTop: 2, color: '#7c5cff' }} />
+                        <span>{f}</span>
+                    </li>
+                ))}
             </ul>
         </div>
     );
 }
 
-// The API has no `features` field today (Gap #1), so this returns [] and nothing renders.
-// We read it DEFENSIVELY: if a future backend adds `features: string[]` to the product,
-// this lights up automatically — no other code change needed.
-function extractFeatures(product: ProductResponse): string[] {
-    // TODO(backend): once ProductResponse gains a `features: string[]` field, add it to the
-    // type and replace this cast with `const maybe = product.features;`.
-    const maybe = (product as { features?: string[] }).features;
-    return Array.isArray(maybe) ? maybe : [];
+// A small badge indicating this product's content was generated with AI assistance.
+function AiBadge() {
+    return (
+        <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px',
+            borderRadius: 999, background: 'rgba(124,92,255,.12)', color: '#7c5cff',
+            fontSize: 11.5, fontWeight: 700,
+        }}>
+            <Sparkles size={12} /> AI-enhanced
+        </span>
+    );
 }
-
-// A tiny CSS-spin loading circle for the Add-to-Cart button.
 function Spinner() {
     return (
         <span style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,.5)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
