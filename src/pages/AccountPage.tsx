@@ -1,11 +1,13 @@
 // src/pages/AccountPage.tsx
 import { useState, type CSSProperties, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import Logo from '../components/Logo';
 import { useAuth } from '../context/AuthContext';
 import { useAuthModal } from '../context/AuthModalContext';
+import { redirectPathForRole } from '../lib/authRoutes';
 import { getMe, updateProfile, changePassword } from '../api/auth';
 
 // Read a backend ProblemDetails message (`detail`), falling back to a generic line.
@@ -17,8 +19,13 @@ function errorMessage(err: unknown, fallback: string): string {
 
 export function AccountPage() {
     const queryClient = useQueryClient();
-    const { updateUser, logout } = useAuth();
+    const { user, updateUser, logout } = useAuth();
     const { openAuth } = useAuthModal();
+
+    // Where "back" goes depends on the signed-in role: Admin -> /admin, Seller -> /seller,
+    // Customer -> /products. Reuses the same mapping as the post-login redirect.
+    const homePath = user ? redirectPathForRole(user.role) : '/products';
+    const homeLabel = user?.role === 'Admin' ? 'admin' : user?.role === 'Seller' ? 'dashboard' : 'shopping';
 
     // ---- load the profile ----
     const { data: profile, isLoading, isError } = useQuery({ queryKey: ['me'], queryFn: getMe });
@@ -133,10 +140,13 @@ export function AccountPage() {
             <header style={headerStyle}>
                 <div style={{ maxWidth: 760, margin: '0 auto', padding: '13px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-                        <Logo height={26} to="/products" />
+                        <Logo height={26} to={homePath} />
                         <span style={{ fontSize: 13, color: '#9a97a8', fontWeight: 500 }}>/ Account</span>
                     </div>
-                    <button onClick={() => logout()} style={ghostBtnStyle}>Log out</button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <Link to={homePath} style={{ ...ghostBtnStyle, display: 'inline-block', textDecoration: 'none' }}>← Back to {homeLabel}</Link>
+                        <button onClick={() => logout()} style={ghostBtnStyle}>Log out</button>
+                    </div>
                 </div>
             </header>
 

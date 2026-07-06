@@ -25,6 +25,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 const axiosInstance = axios.create({
     baseURL: API_URL,
     headers: { 'Content-Type': 'application/json' },
+    withCredentials: true, // send/receive the HttpOnly refreshToken cookie
 });
 
 // REQUEST INTERCEPTOR: attach the in-memory access token (read from the bridge), if any.
@@ -43,22 +44,21 @@ axiosInstance.interceptors.request.use(
 let refreshPromise: Promise<string> | null = null;
 
 async function refreshAccessToken(): Promise<string> {
-    const refreshToken = tokenStore.getRefreshToken();
-    if (!refreshToken) throw new Error('No refresh token available.');
-
     try {
         // Bare axios (NOT axiosInstance) so this call skips the interceptors above.
+        // No body needed: the refresh token travels as the HttpOnly cookie, sent
+        // automatically because withCredentials is set.
         const res = await axios.post<AuthResponse>(
             `${API_URL}/api/v1/auth/refresh-token`,
-            { refreshToken },
-            { headers: { 'Content-Type': 'application/json' } },
+            {},
+            { headers: { 'Content-Type': 'application/json' }, withCredentials: true },
         );
 
         // Update the store + push into React state (keeps both worlds in sync).
         tokenStore.handleRefreshed(res.data);
         return res.data.accessToken;
     } catch (err) {
-        // Refresh failed (expired/revoked refresh token, network, etc.) => log out.
+        // Refresh failed (no/expired/revoked refresh token cookie, network, etc.) => log out.
         // This lives INSIDE the single-flight call, so it runs ONCE even when many parallel
         // 401s are awaiting the same refresh — not once per queued request.
         tokenStore.handleAuthFailure();
@@ -75,12 +75,6 @@ axiosInstance.interceptors.response.use(
 
         // Only recover from a genuine 401, only once, and never for opted-out requests.
         if (status !== 401 || !original || original._retry || original._skipAuthRefresh) {
-            return Promise.reject(error);
-        }
-
-        // No refresh token => can't recover => log out.
-        if (!tokenStore.getRefreshToken()) {
-            tokenStore.handleAuthFailure();
             return Promise.reject(error);
         }
 

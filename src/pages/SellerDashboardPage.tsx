@@ -2,7 +2,9 @@
 import { useMemo, useState } from 'react';
 import type { CSSProperties, FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { LogOut, UserCog } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useStores } from '../hooks/useStores';
 import { useCreateStore } from '../hooks/useCreateStore';
@@ -30,7 +32,7 @@ const card: CSSProperties = { padding: 20, borderRadius: 16, background: 'rgba(2
 const inputStyle: CSSProperties = { width: '100%', boxSizing: 'border-box', padding: '11px 13px', fontSize: 14.5, fontFamily: 'inherit', color: '#fff', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 12, outline: 'none' };
 
 export function SellerDashboardPage() {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     const queryClient = useQueryClient();
 
     // Real "list my stores" via GET /api/v1/Stores/mine (survives a page refresh).
@@ -38,6 +40,18 @@ export function SellerDashboardPage() {
 
     const [storeName, setStoreName] = useState('');
     const [storeDescription, setStoreDescription] = useState('');
+    const [loggingOut, setLoggingOut] = useState(false);
+
+    // Guard against a double-click firing two /logout calls.
+    async function onLogout() {
+        if (loggingOut) return;
+        setLoggingOut(true);
+        try {
+            await logout();
+        } finally {
+            setLoggingOut(false);
+        }
+    }
 
     const createStore = useCreateStore({
         onSuccess: (store) => {
@@ -72,10 +86,26 @@ export function SellerDashboardPage() {
     return (
         <main style={{ minHeight: '100vh', background: '#0a0a12', color: '#fff', padding: '40px 24px' }}>
             <div style={{ maxWidth: 880, margin: '0 auto' }}>
-                <h1 style={{ fontFamily: 'Outfit', fontSize: 30, fontWeight: 700, margin: '0 0 6px' }}>Seller dashboard</h1>
-                <p style={{ margin: '0 0 28px', color: 'rgba(255,255,255,0.6)' }}>
-                    Welcome{user ? `, ${user.firstName}` : ''}. Manage your stores below.
-                </p>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+                    <div>
+                        <h1 style={{ fontFamily: 'Outfit', fontSize: 30, fontWeight: 700, margin: '0 0 6px' }}>Seller dashboard</h1>
+                        <p style={{ margin: '0 0 28px', color: 'rgba(255,255,255,0.6)' }}>
+                            Welcome{user ? `, ${user.firstName}` : ''}. Manage your stores below.
+                        </p>
+                    </div>
+                    <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <Link to="/account" title="My account"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 16px', fontFamily: 'inherit', fontSize: 14.5, fontWeight: 600, color: 'rgba(255,255,255,0.82)', textDecoration: 'none', borderRadius: 11, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.04)' }}>
+                            <UserCog size={15} aria-hidden />
+                            My account
+                        </Link>
+                        <button type="button" onClick={onLogout} disabled={loggingOut} title="Log out"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 16px', fontFamily: 'inherit', fontSize: 14.5, fontWeight: 600, color: '#ff8fa3', cursor: loggingOut ? 'wait' : 'pointer', opacity: loggingOut ? 0.6 : 1, borderRadius: 11, border: '1px solid rgba(255,93,122,0.28)', background: 'rgba(255,93,122,0.08)' }}>
+                            <LogOut size={15} aria-hidden />
+                            {loggingOut ? 'Logging out…' : 'Log out'}
+                        </button>
+                    </div>
+                </div>
 
                 {/* Pending-store gate: required message + disabled selling actions */}
                 {sellingLocked && (

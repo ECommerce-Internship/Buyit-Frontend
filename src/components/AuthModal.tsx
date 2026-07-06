@@ -152,19 +152,30 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
         }
 
         try {
-            // Log in OR register a buyer, depending on the active tab.
+            // Log in OR register a buyer, depending on the active tab. _skipAuthRefresh: these are
+            // public, unauthenticated calls — a 401 here means wrong credentials, NOT an expired
+            // session, so it must NOT trigger the refresh-token/logout flow (that would redirect
+            // away before this function's catch block gets to show the inline error message).
             const res = isLogin
-                ? await axiosInstance.post<AuthResponse>('/api/v1/auth/login', { email, password })
-                : await axiosInstance.post<AuthResponse>('/api/v1/auth/register', {
-                    firstName,
-                    lastName,
-                    email,
-                    password,
-                    // phone is optional: only include it when the user actually typed one.
-                    ...(phone.trim() ? { phoneNumber: phone.trim() } : {}),
-                });
+                ? await axiosInstance.post<AuthResponse>(
+                    '/api/v1/auth/login',
+                    { email, password },
+                    { _skipAuthRefresh: true },
+                )
+                : await axiosInstance.post<AuthResponse>(
+                    '/api/v1/auth/register',
+                    {
+                        firstName,
+                        lastName,
+                        email,
+                        password,
+                        // phone is optional: only include it when the user actually typed one.
+                        ...(phone.trim() ? { phoneNumber: phone.trim() } : {}),
+                    },
+                    { _skipAuthRefresh: true },
+                );
 
-            login(res.data);   // store token (key 'token') + refreshToken + user via AuthContext
+            login(res.data);   // store access token + user in AuthContext (refresh token is an HttpOnly cookie)
             setSuccess(true);  // show the design's existing success panel
         } catch (err) {
             // Backend errors arrive as RFC-7807 ProblemDetails; the message is in `detail`.
