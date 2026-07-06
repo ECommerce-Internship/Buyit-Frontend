@@ -9,6 +9,8 @@ import { SellerRoute } from './routes/SellerRoute';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { AccountPage } from './pages/AccountPage';
 import { SellerDashboardPage } from './pages/SellerDashboardPage';
+import { SellerProductsPage } from './pages/seller/SellerProductsPage';
+import { SellerInventoryPage } from './pages/seller/SellerInventoryPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { OrderConfirmationPage } from './pages/OrderConfirmationPage';
 import { AdminProductsPage } from './pages/admin/AdminProductsPage';
@@ -73,6 +75,8 @@ function App() {
                     {/* Logged in AND Seller. */}
                     <Route element={<SellerRoute />}>
                         <Route path="/seller" element={page(<SellerDashboardPage />)} />
+                        <Route path="/seller/products" element={page(<SellerProductsPage />)} />
+                        <Route path="/seller/inventory" element={page(<SellerInventoryPage />)} />
                     </Route>
                 </Route>
             </Routes>

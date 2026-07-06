@@ -3,6 +3,7 @@ import { useState, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import toast from 'react-hot-toast';
 import { useProducts } from '../../hooks/useProducts';
+import { useAdminStores } from '../../hooks/useAdminStores';
 import { useDebounce } from '../../hooks/useDebounce';
 import { useDeleteProduct, useImportProducts, useImportFromSftp } from '../../hooks/useProductMutations';
 import { Pagination } from '../../components/products/Pagination';
@@ -39,6 +40,7 @@ export function AdminProductsPage() {
         page,
         pageSize: PAGE_SIZE,
     });
+    const { data: stores = [] } = useAdminStores();
 
     const del = useDeleteProduct({
         onSuccess: () => toast.success('Product deleted.'),
@@ -264,6 +266,7 @@ export function AdminProductsPage() {
             {editing !== null && (
                 <ProductFormModal
                     product={editing === 'new' ? null : editing}
+                    stores={stores}
                     onClose={() => setEditing(null)}
                 />
             )}

@@ -19,6 +19,7 @@ export interface ProductQueryParams {
     sortDescending?: boolean;
     page?: number;
     pageSize?: number;
+    storeId?: number;   // scope to ONE store (seller/admin management view)
 }
 
 export async function fetchProducts(

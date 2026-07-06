@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { LogOut, UserCog } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useStores } from '../hooks/useStores';
+import { SellerTabs } from '../components/seller/SellerTabs';
 import { useCreateStore } from '../hooks/useCreateStore';
 import type { StoreStatus } from '../types/store';
 
@@ -106,7 +107,7 @@ export function SellerDashboardPage() {
                         </button>
                     </div>
                 </div>
-
+                <SellerTabs />
                 {/* Pending-store gate: required message + disabled selling actions */}
                 {sellingLocked && (
                     <div style={{ ...card, borderColor: 'rgba(255,178,77,0.3)', background: 'rgba(255,178,77,0.08)', marginBottom: 24 }}>

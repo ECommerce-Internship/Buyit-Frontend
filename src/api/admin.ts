@@ -70,6 +70,25 @@ export async function updateStock(productId: number, newQuantity: number): Promi
     return res.data;
 }
 
+// UPDATE a product's low-stock threshold. PUT /api/v1/inventory/{productId}/threshold
+// Same bare-number body convention as updateStock above.
+export async function updateThreshold(productId: number, newThreshold: number): Promise<InventoryItem> {
+    const res = await axiosInstance.put<InventoryItem>(
+        `/api/v1/inventory/${productId}/threshold`,
+        newThreshold,
+    );
+    return res.data;
+}
+
+// LIST inventory rows for ONE store (the seller's own, or an admin's pick).
+// GET /api/v1/inventory/mine?storeId=X — ownership is enforced by the backend (403 otherwise).
+export async function fetchInventoryByStore(storeId: number): Promise<InventoryItem[]> {
+    const res = await axiosInstance.get<InventoryItem[]>('/api/v1/inventory/mine', {
+        params: { storeId },
+    });
+    return res.data;
+}
+
 // ---------- DASHBOARD (five separate endpoints, §5.2) ----------
 
 // KPI summary. GET /api/v1/admin/dashboard/summary
