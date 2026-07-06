@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import {
+    AlertTriangle,
     ArrowLeft,
     CheckCircle2,
     CreditCard,
@@ -10,10 +11,12 @@ import {
     MapPin,
     PackageCheck,
     ShoppingCart,
+    Store,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { fetchCart } from '../api/cart';
+import type { CartItem } from '../api/cart';
 import { placeOrder } from '../api/orders';
 import { createPayment, type PaymentMethod } from '../api/payments';
 
@@ -135,6 +138,18 @@ export function CheckoutPage() {
         refetchOnWindowFocus: true,
     });
 
+    const storeGroups = useMemo(() => {
+        if (!cart) return [];
+        const map = new Map<number, { storeId: number; storeName: string; items: CartItem[] }>();
+        for (const item of cart.items) {
+            if (!map.has(item.storeId)) {
+                map.set(item.storeId, { storeId: item.storeId, storeName: item.storeName, items: [] });
+            }
+            map.get(item.storeId)!.items.push(item);
+        }
+        return Array.from(map.values());
+    }, [cart]);
+
     useEffect(() => {
         if (
             !isLoading &&
@@ -207,6 +222,10 @@ export function CheckoutPage() {
     }
 
     function handlePlaceOrder() {
+        if (outOfStockItems.length > 0) {
+            toast.error('Please resolve out-of-stock items before placing your order.');
+            return;
+        }
         const validationMessage = validateForm();
         if (validationMessage) {
             setFormError(validationMessage);
@@ -243,7 +262,9 @@ export function CheckoutPage() {
     }
 
     const isPlacingOrder = checkoutMutation.isPending;
-
+    const outOfStockItems = cart.items.filter(
+        (item) => item.quantityInStock <= 0 || item.quantity > item.quantityInStock,
+    );
     return (
         <div className="min-h-screen bg-[linear-gradient(180deg,#f7f6fb_0%,#fff7f2_100%)]">
             <div className="px-4 py-10">
@@ -450,30 +471,50 @@ export function CheckoutPage() {
                                 </div>
                             </div>
 
-                            <div className="max-h-[320px] space-y-4 overflow-auto pr-1">
-                                {cart.items.map((item) => (
-                                    <div
-                                        key={item.productId}
-                                        className="flex gap-3 rounded-xl border border-[#f0edf7] bg-[#faf9fc] p-3"
-                                    >
-                                        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-[#f0edf7] bg-white">
-                                            {item.imageUrl ? (
-                                                <img
-                                                    src={item.imageUrl}
-                                                    alt={item.productName}
-                                                    className="h-full w-full object-cover"
-                                                />
-                                            ) : (
-                                                <div className="flex h-full w-full items-center justify-center">
-                                                    <ShoppingCart className="h-6 w-6 text-gray-300" />
-                                                </div>
-                                            )}
+                            <div className="max-h-[360px] space-y-5 overflow-auto pr-1">
+                                {storeGroups.map((group) => (
+                                    <div key={group.storeId}>
+                                        <div className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-gray-400">
+                                            <Store className="h-3.5 w-3.5 text-[#ff5f6d]" />
+                                            {group.storeName}
                                         </div>
-
-                                        <div className="min-w-0 flex-1">
-                                            <p className="truncate font-semibold text-gray-900">{item.productName}</p>
-                                            <p className="mt-1 text-sm text-gray-500">Qty: {item.quantity}</p>
-                                            <p className="mt-1 font-bold text-gray-900">{formatMoney(item.lineTotal)}</p>
+                                        <div className="space-y-3">
+                                            {group.items.map((item) => (
+                                                <div
+                                                    key={item.productId}
+                                                    className="flex gap-3 rounded-xl border border-[#f0edf7] bg-[#faf9fc] p-3"
+                                                >
+                                                    <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-[#f0edf7] bg-white">
+                                                        {item.imageUrl ? (
+                                                            <img
+                                                                src={item.imageUrl}
+                                                                alt={item.productName}
+                                                                className="h-full w-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div className="flex h-full w-full items-center justify-center">
+                                                                <ShoppingCart className="h-6 w-6 text-gray-300" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="truncate font-semibold text-gray-900">{item.productName}</p>
+                                                        <p className="mt-1 text-sm text-gray-500">Qty: {item.quantity}</p>
+                                                        <p className="mt-1 font-bold text-gray-900">{formatMoney(item.lineTotal)}</p>
+                                                        {item.quantityInStock <= 0 ? (
+                                                            <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-600">
+                                                                <AlertTriangle className="h-3 w-3" />
+                                                                Out of stock
+                                                            </p>
+                                                        ) : item.quantity > item.quantityInStock ? (
+                                                            <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-600">
+                                                                <AlertTriangle className="h-3 w-3" />
+                                                                Only {item.quantityInStock} left
+                                                            </p>
+                                                        ) : null}
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 ))}
@@ -502,20 +543,37 @@ export function CheckoutPage() {
                                 </div>
                             </div>
 
+                            {outOfStockItems.length > 0 && (
+                                <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                                    <p className="mb-1.5 flex items-center gap-1.5 font-semibold">
+                                        <AlertTriangle className="h-4 w-4" />
+                                        Fix these items before you can pay
+                                    </p>
+                                    <ul className="list-disc space-y-0.5 pl-5">
+                                        {outOfStockItems.map((item) => (
+                                            <li key={item.productId}>
+                                                {item.productName} —{' '}
+                                                {item.quantityInStock <= 0
+                                                    ? 'out of stock'
+                                                    : `only ${item.quantityInStock} available, you have ${item.quantity} in cart`}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
                             {apiError && (
                                 <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
                                     {apiError}
                                 </div>
                             )}
-
                             <button
                                 type="button"
                                 onClick={handlePlaceOrder}
-                                disabled={isPlacingOrder}
+                                disabled={isPlacingOrder || outOfStockItems.length > 0}
                                 className="mt-6 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ff7a45] to-[#ff416c] px-5 py-3 font-semibold text-white shadow-[0_16px_35px_rgba(255,95,109,0.28)] transition duration-300 ease-out hover:scale-[1.01] hover:shadow-[0_20px_42px_rgba(255,95,109,0.34)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
                             >
                                 {isPlacingOrder && <Loader2 className="h-4 w-4 animate-spin" />}
-                                {isPlacingOrder ? 'Placing order...' : 'Place Order'}
+                                {isPlacingOrder ? 'Placing order...' : outOfStockItems.length > 0 ? 'Resolve stock issues to continue' : 'Place Order'}
                             </button>
 
                             <p className="mt-4 text-center text-xs leading-5 text-gray-400">

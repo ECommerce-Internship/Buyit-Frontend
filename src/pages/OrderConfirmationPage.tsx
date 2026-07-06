@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { CheckCircle2, Loader2, Package, ShoppingBag } from 'lucide-react';
+import { CheckCircle2, Loader2, Package, ShoppingBag, Store } from 'lucide-react';
 import { fetchOrderById } from '../api/orders';
 
 /* ---------------------------------------------------------------------- */
@@ -120,37 +120,66 @@ export function OrderConfirmationPage() {
                     </div>
                 </div>
 
-                {/* Items */}
+                {/* Items, grouped per store */}
                 <div className="rounded-2xl border border-[#efe8f6] bg-white p-6 shadow-sm">
                     <h2 className="mb-4 font-bold text-gray-900">
                         Items ordered
                         <span className="ml-2 text-sm font-normal text-gray-400">
-                            ({allItems.length} {allItems.length === 1 ? 'item' : 'items'})
+                            ({allItems.length} {allItems.length === 1 ? 'item' : 'items'} from {order.storeOrders.length} {order.storeOrders.length === 1 ? 'seller' : 'sellers'})
                         </span>
                     </h2>
 
-                    <div className="space-y-3">
-                        {allItems.map((item) => (
-                            <div
-                                key={item.storeOrderItemId}
-                                className="flex items-center gap-4 rounded-xl border border-[#f0edf7] bg-[#faf9fc] p-3"
-                            >
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-[#f0edf7] bg-white">
-                                    <ShoppingBag className="h-5 w-5 text-gray-300" />
+                    <div className="space-y-5">
+                        {order.storeOrders.map((storeOrder) => (
+                            <div key={storeOrder.storeOrderId} className="overflow-hidden rounded-xl border border-[#f0edf7]">
+                                <div className="flex items-center justify-between gap-2 border-b border-[#f0edf7] bg-[#faf9fc] px-4 py-2.5">
+                                    <div className="flex items-center gap-1.5">
+                                        <Store className="h-3.5 w-3.5 text-[#ff5f6d]" />
+                                        <span className="text-sm font-bold text-gray-700">{storeOrder.storeName}</span>
+                                    </div>
+                                    <span className="text-xs font-semibold text-gray-400">Order #{storeOrder.storeOrderId}</span>
                                 </div>
-                                <div className="min-w-0 flex-1">
-                                    <p className="truncate font-semibold text-gray-900">{item.productName}</p>
-                                    <p className="text-sm text-gray-400">Qty: {item.quantity}</p>
+                                <div className="space-y-3 p-3">
+                                    {storeOrder.items.map((item) => (
+                                        <div
+                                            key={item.storeOrderItemId}
+                                            className="flex items-center gap-4 rounded-xl bg-white p-2"
+                                        >
+                                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-[#f0edf7] bg-[#faf9fc]">
+                                                <ShoppingBag className="h-5 w-5 text-gray-300" />
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="truncate font-semibold text-gray-900">{item.productName}</p>
+                                                <p className="text-sm text-gray-400">Qty: {item.quantity}</p>
+                                            </div>
+                                            <p className="shrink-0 font-bold text-gray-900">{formatMoney(item.lineTotal)}</p>
+                                        </div>
+                                    ))}
                                 </div>
-                                <p className="shrink-0 font-bold text-gray-900">{formatMoney(item.lineTotal)}</p>
+                                <div className="flex items-center justify-between border-t border-[#f0edf7] bg-[#faf9fc] px-4 py-2.5">
+                                    <span className="text-xs font-semibold text-gray-500">Store subtotal</span>
+                                    <span className="text-sm font-bold text-gray-900">{formatMoney(storeOrder.subTotal)}</span>
+                                </div>
                             </div>
                         ))}
                     </div>
 
-                    {/* Total */}
-                    <div className="mt-5 flex items-center justify-between border-t border-[#f0edf7] pt-5">
-                        <span className="text-lg font-bold text-gray-900">Total paid</span>
-                        <span className="text-lg font-bold text-[#ff5f6d]">{formatMoney(order.totalAmount)}</span>
+                    {/* Totals */}
+                    <div className="mt-5 space-y-2 border-t border-[#f0edf7] pt-5">
+                        <div className="flex items-center justify-between text-sm text-gray-600">
+                            <span>Subtotal</span>
+                            <span className="font-medium text-gray-900">{formatMoney(order.totalAmount + order.discountAmount)}</span>
+                        </div>
+                        {order.discountAmount > 0 && (
+                            <div className="flex items-center justify-between text-sm text-green-600">
+                                <span>Discount</span>
+                                <span className="font-semibold">-{formatMoney(order.discountAmount)}</span>
+                            </div>
+                        )}
+                        <div className="flex items-center justify-between border-t border-[#f0edf7] pt-3">
+                            <span className="text-lg font-bold text-gray-900">Total paid</span>
+                            <span className="text-lg font-bold text-[#ff5f6d]">{formatMoney(order.totalAmount)}</span>
+                        </div>
                     </div>
                 </div>
 
