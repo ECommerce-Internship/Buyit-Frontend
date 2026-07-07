@@ -11,6 +11,8 @@ export interface StoreOrderItemResponse {
 
 export interface StoreOrderResponse {
     storeOrderId: number;
+    orderId: number;
+    orderDate: string;
     storeId: number;
     storeName: string;
     status: string;

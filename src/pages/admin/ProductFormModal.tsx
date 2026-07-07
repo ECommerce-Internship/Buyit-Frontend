@@ -3,7 +3,6 @@ import { useState, useRef, useEffect } from 'react';
 import type { CSSProperties, FormEvent } from 'react';
 import toast from 'react-hot-toast';
 import { useCategories } from '../../hooks/useCategories';
-import { useAdminStores } from '../../hooks/useAdminStores';
 import {
     useCreateProduct,
     useUpdateProduct,
@@ -11,16 +10,17 @@ import {
     useGenerateContent,
 } from '../../hooks/useProductMutations';
 import type { ProductResponse, ProductContentSuggestion } from '../../types/product';
+import type { Store } from '../../types/store';
 
 interface Props {
     product: ProductResponse | null; // null = create, a product = edit
+    stores: Store[];                 // which stores the caller may assign this product to
     onClose: () => void;
 }
 
-export function ProductFormModal({ product, onClose }: Props) {
+export function ProductFormModal({ product, stores, onClose }: Props) {
     const isEdit = product !== null;
     const { data: categories = [] } = useCategories();
-    const { data: stores = [] } = useAdminStores();
 
     // --- form fields (pre-filled in edit mode) ---
     const [name, setName] = useState(product?.name ?? '');

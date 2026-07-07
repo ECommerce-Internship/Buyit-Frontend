@@ -112,6 +112,9 @@ export function ProductListingPage() {
                             My account
                         </Link>
                     )}
+                    <Link to="/cart" style={{ fontSize: 13.5, fontWeight: 600, color: '#7c5cff', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                        My CART
+                    </Link>
                 </div>
             </header>
 
