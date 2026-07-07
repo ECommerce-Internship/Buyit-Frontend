@@ -6,6 +6,7 @@ const TABS = [
     { to: '/seller', label: 'Dashboard', end: true },
     { to: '/seller/products', label: 'Products', end: false },
     { to: '/seller/inventory', label: 'Inventory', end: false },
+    { to: '/seller/orders', label: 'Orders', end: false },
 ];
 
 export function SellerTabs() {

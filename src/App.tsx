@@ -11,6 +11,7 @@ import { AccountPage } from './pages/AccountPage';
 import { SellerDashboardPage } from './pages/SellerDashboardPage';
 import { SellerProductsPage } from './pages/seller/SellerProductsPage';
 import { SellerInventoryPage } from './pages/seller/SellerInventoryPage';
+import { SellerOrdersPage } from './pages/seller/SellerOrdersPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { OrderConfirmationPage } from './pages/OrderConfirmationPage';
 import { AdminProductsPage } from './pages/admin/AdminProductsPage';
@@ -77,6 +78,7 @@ function App() {
                         <Route path="/seller" element={page(<SellerDashboardPage />)} />
                         <Route path="/seller/products" element={page(<SellerProductsPage />)} />
                         <Route path="/seller/inventory" element={page(<SellerInventoryPage />)} />
+                        <Route path="/seller/orders" element={page(<SellerOrdersPage />)} />
                     </Route>
                 </Route>
             </Routes>

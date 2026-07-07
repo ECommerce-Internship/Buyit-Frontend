@@ -20,6 +20,8 @@ export interface OrderSummary {
 // Status lives HERE (per store), not on the order (see §5.3).
 export interface StoreOrder {
     storeOrderId: number;
+    orderId: number;
+    orderDate: string;        // ISO date string
     storeId: number;
     storeName: string;
     status: string;
