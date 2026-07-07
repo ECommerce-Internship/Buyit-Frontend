@@ -58,7 +58,7 @@ export function OrderManageModal({ orderId, onClose }: Props) {
                                         onChange={(e) => onChangeStatus(so.storeOrderId, e.target.value)}
                                         style={{ ...select, color: statusColor(so.status) }}
                                     >
-                                        {ORDER_STATUSES.map((s) => <option key={s} value={s} style={{ color: '#000' }}>{s}</option>)}
+                                        {ORDER_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                                     </select>
                                 </div>
                             ))}

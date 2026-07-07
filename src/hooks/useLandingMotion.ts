@@ -2,16 +2,17 @@ import { useEffect } from 'react';
 
 /**
  * useLandingMotion — ports the imperative bits of the original design:
- *   1. data-reveal  : staggered fade/slide-in cascade in document order
+ *   1. data-reveal  : fade/slide-in each element AS IT SCROLLS INTO VIEW
  *   2. data-depth   : pointer parallax inside the [data-hero] element
  *
  * (Stat count-up now lives in the reusable <CountUp> component.)
  *
  * Attach the returned ref to the page root. Honours prefers-reduced-motion.
  *
- * NOTE FOR PORT: this is a faithful 1:1 reproduction of the source's
- * querySelector-driven approach. In a greenfield React build you'd likely
- * swap this for an IntersectionObserver hook + a <Reveal> wrapper component.
+ * Reveal is driven by an IntersectionObserver: every [data-reveal] element starts
+ * hidden and animates in the first time it enters the viewport (then is unobserved
+ * so it only plays once). Elements already on screen at load reveal immediately.
+ * `data-delay` (ms) adds a per-element offset; items entering together stagger.
  */
 export function useLandingMotion(rootRef: React.RefObject<HTMLElement | null>) {
   useEffect(() => {
@@ -19,36 +20,52 @@ export function useLandingMotion(rootRef: React.RefObject<HTMLElement | null>) {
     if (!root) return;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // --- Reveal cascade --------------------------------------------------
+    // --- Scroll-triggered reveal ----------------------------------------
     const els = Array.from(root.querySelectorAll<HTMLElement>('[data-reveal]'));
     const timers: number[] = [];
+    let observer: IntersectionObserver | null = null;
 
-    if (reduced) {
+    const show = (el: HTMLElement, delay: number) => {
+      const t = window.setTimeout(() => {
+        el.style.opacity = '1';
+        el.style.transform = 'none';
+      }, delay);
+      timers.push(t);
+    };
+
+    if (reduced || !('IntersectionObserver' in window)) {
+      // No motion (or no IO support): just make everything visible.
       els.forEach((el) => {
         el.style.opacity = '1';
         el.style.transform = 'none';
       });
     } else {
       els.forEach((el) => {
+        // data-reveal="pop" scales in (for badges/chips); the default slides up.
+        const pop = el.getAttribute('data-reveal') === 'pop';
         el.style.opacity = '0';
-        el.style.transform = 'translateY(26px)';
-        el.style.transition =
-          'opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1)';
+        el.style.transform = pop ? 'scale(.5)' : 'translateY(26px)';
+        el.style.transition = pop
+          ? 'opacity .45s ease, transform .45s cubic-bezier(.34,1.56,.64,1)' // overshoot = "pop"
+          : 'opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1)';
       });
-      const reveal = (el: HTMLElement, delay: number) => {
-        const t = window.setTimeout(() => {
-          el.style.opacity = '1';
-          el.style.transform = 'none';
-        }, delay);
-        timers.push(t);
-      };
-      const vh = window.innerHeight || 800;
-      els.forEach((el, i) => {
-        const r = el.getBoundingClientRect();
-        const extra = parseFloat(el.getAttribute('data-delay') || '0');
-        const base = r.top < vh ? i * 70 : 220 + i * 45;
-        reveal(el, base + extra);
-      });
+
+      observer = new IntersectionObserver(
+        (entries, obs) => {
+          // Stagger the items that cross into view together for a cascade feel.
+          entries
+            .filter((e) => e.isIntersecting)
+            .forEach((entry, i) => {
+              const el = entry.target as HTMLElement;
+              const extra = parseFloat(el.getAttribute('data-delay') || '0');
+              show(el, extra + i * 80);
+              obs.unobserve(el); // reveal once
+            });
+        },
+        // Trigger a touch before the element is fully in view.
+        { threshold: 0.12, rootMargin: '0px 0px -8% 0px' },
+      );
+      els.forEach((el) => observer!.observe(el));
     }
 
     // --- Pointer parallax ------------------------------------------------
@@ -69,6 +86,7 @@ export function useLandingMotion(rootRef: React.RefObject<HTMLElement | null>) {
 
     return () => {
       timers.forEach(clearTimeout);
+      observer?.disconnect();
       if (hero && onMove) hero.removeEventListener('mousemove', onMove);
     };
   }, [rootRef]);

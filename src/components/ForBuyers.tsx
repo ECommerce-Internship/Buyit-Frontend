@@ -2,8 +2,9 @@ import { Hoverable } from './ui/Hoverable';
 import { buyerPoints } from '../data/landing';
 import { useAuthModal } from '../context/AuthModalContext';
 
-const CheckBadge = ({ bg }: { bg: string }) => (
-  <span style={{ flex: 'none', marginTop: 1, width: 22, height: 22, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', background: bg, color: '#fff' }}>
+const CheckBadge = ({ bg, delay }: { bg: string; delay?: number }) => (
+  // data-reveal="pop" makes the badge scale-in (overshoot) as its row lands.
+  <span data-reveal="pop" data-delay={delay} style={{ flex: 'none', marginTop: 1, width: 22, height: 22, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', background: bg, color: '#fff' }}>
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
   </span>
 );
@@ -20,9 +21,16 @@ export function ForBuyers() {
           <p style={{ margin: '16px 0 26px', fontSize: 16.5, lineHeight: 1.6, color: '#5b5870' }}>Discover thousands of independent sellers, check out once, and track each store's delivery on its own.</p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
-            {buyerPoints.map((p) => (
-              <div key={p.text} style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                <CheckBadge bg="linear-gradient(135deg, #ff8a4c, #ff4d6d)" />
+            {buyerPoints.map((p, i) => (
+              // Each row reveals on scroll, one after the other, so the list ticks off
+              // like a checklist. data-delay staggers them (110ms apart).
+              <div
+                key={p.text}
+                data-reveal
+                data-delay={i * 110}
+                style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}
+              >
+                <CheckBadge bg="linear-gradient(135deg, #ff8a4c, #ff4d6d)" delay={i * 110 + 60} />
                 <span style={{ fontSize: 15.5, lineHeight: 1.45, color: '#2c2940' }}>{p.text}</span>
               </div>
             ))}

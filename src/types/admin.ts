@@ -70,6 +70,13 @@ export interface DashboardSummary {
     lowStockCount: number;
     todaysNewOrders: number;
     totalCommission: number | null;
+    // Rolling 30-day hero metrics (vs. the prior 30-day window). Growth is null when the
+    // prior window had no baseline; avgRating is null when there are no reviews yet.
+    revenue30d: number;
+    revenueGrowthPct: number | null;
+    orders30d: number;
+    ordersGrowthPct: number | null;
+    avgRating: number | null;
 }
 
 // One point on a time series, e.g. { period: "2026-06", value: 1234.5 }.

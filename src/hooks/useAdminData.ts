@@ -1,5 +1,5 @@
 // src/hooks/useAdminData.ts
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import {
     fetchAdminOrders,
     fetchAdminOrder,
@@ -88,8 +88,14 @@ export function useUpdateStock(opts?: {
 export function useDashboardSummary() {
     return useQuery({ queryKey: ['dash-summary'], queryFn: fetchDashboardSummary });
 }
-export function useRevenue(period = 'month') {
-    return useQuery({ queryKey: ['dash-revenue', period], queryFn: () => fetchRevenue(period) });
+// `range` is one of 1d|15d|30d|3m|6m|1y. keepPreviousData keeps the old series on screen
+// while the next window loads, so switching ranges re-animates smoothly instead of blanking.
+export function useRevenue(range = '30d') {
+    return useQuery({
+        queryKey: ['dash-revenue', range],
+        queryFn: () => fetchRevenue(range),
+        placeholderData: keepPreviousData,
+    });
 }
 export function useTopProducts() {
     return useQuery({ queryKey: ['dash-top'], queryFn: fetchTopProducts });
