@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type KeyboardEvent, type CSSProperties } from 'react';
+import { useState, useRef, useEffect, type Dispatch, type SetStateAction, type KeyboardEvent, type CSSProperties } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Send } from 'lucide-react';
@@ -58,10 +58,19 @@ const botBubble: CSSProperties = {
 const dot: CSSProperties = { width: 6, height: 6, borderRadius: '50%', background: '#b9b4cc' };
 const row: CSSProperties = { position: 'relative', zIndex: 1 };   // keeps content above the blobs
 
-export function ChatPanel({ onClose }: { onClose: () => void }) {
-    // --- State: everything the panel remembers between renders ---
-    const [messages, setMessages] = useState<ChatMessage[]>([]);           // the on-screen thread
-    const [conversationId, setConversationId] = useState<string | null>(null); // session thread id
+interface ChatPanelProps {
+    onClose: () => void;
+    // The conversation is owned by the parent ChatWidget so it survives closing the panel — see
+    // the comment in ChatWidget. ChatPanel just reads and updates it through these props.
+    messages: ChatMessage[];
+    setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
+    conversationId: string | null;
+    setConversationId: Dispatch<SetStateAction<string | null>>;
+}
+
+export function ChatPanel({ onClose, messages, setMessages, conversationId, setConversationId }: ChatPanelProps) {
+    // --- State: only the ephemeral, per-open UI bits live here. The conversation (messages +
+    // conversationId) is lifted to ChatWidget so it isn't destroyed when the panel unmounts on close.
     const [input, setInput] = useState('');                                // the text box contents
     const [isLoading, setIsLoading] = useState(false);                     // true while awaiting a reply
 
