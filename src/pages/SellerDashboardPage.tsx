@@ -5,10 +5,18 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { LogOut, UserCog } from 'lucide-react';
+import {
+    ResponsiveContainer, LineChart, Line, BarChart, Bar,
+    XAxis, YAxis, Tooltip, CartesianGrid,
+} from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { useStores } from '../hooks/useStores';
 import { SellerTabs } from '../components/seller/SellerTabs';
 import { useCreateStore } from '../hooks/useCreateStore';
+import {
+    useSellerDashboardSummary, useSellerRevenue, useSellerTopProducts, useSellerOrdersByStatus,
+} from '../hooks/useSellerDashboard';
+import { formatCurrency } from '../lib/format';
 import type { StoreStatus } from '../types/store';
 
 // Colour each status so the badge reads at a glance. Pending = amber, Approved = green,
@@ -19,6 +27,15 @@ const STATUS_COLORS: Record<StoreStatus, { bg: string; fg: string }> = {
     Suspended: { bg: 'rgba(255,93,122,0.14)',  fg: '#ff5d7a' },
     Rejected:  { bg: 'rgba(255,93,122,0.14)',  fg: '#ff5d7a' },
 };
+
+function Kpi({ label, value, accent }: { label: string; value: string; accent?: string }) {
+    return (
+        <div style={kpiCard}>
+            <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.5, color: accent ?? '#fff' }}>{value}</div>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>{label}</div>
+        </div>
+    );
+}
 
 function StatusBadge({ status }: { status: StoreStatus }) {
     const c = STATUS_COLORS[status];
@@ -31,13 +48,24 @@ function StatusBadge({ status }: { status: StoreStatus }) {
 
 const card: CSSProperties = { padding: 20, borderRadius: 16, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' };
 const inputStyle: CSSProperties = { width: '100%', boxSizing: 'border-box', padding: '11px 13px', fontSize: 14.5, fontFamily: 'inherit', color: '#fff', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 12, outline: 'none' };
+const kpiGrid: CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14, marginBottom: 18 };
+const kpiCard: CSSProperties = { padding: 18, borderRadius: 16, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' };
+const th: CSSProperties = { padding: '12px 14px', fontWeight: 600, fontSize: 12.5, textTransform: 'uppercase', letterSpacing: 0.4 };
+const td: CSSProperties = { padding: '10px 14px', verticalAlign: 'middle' };
 
 export function SellerDashboardPage() {
     const { user, logout } = useAuth();
     const queryClient = useQueryClient();
-
     // Real "list my stores" via GET /api/v1/Stores/mine (survives a page refresh).
     const { data: stores = [], isLoading, isError } = useStores();
+
+    // TB-129: store performance metrics, scoped to the seller's own store(s) server-side.
+    const summary = useSellerDashboardSummary();
+    const summaryData = summary.data;
+    const revenue = useSellerRevenue('month');
+    const revenueData = (revenue.data ?? []).slice(-6);
+    const top = useSellerTopProducts();
+    const byStatus = useSellerOrdersByStatus();
 
     const [storeName, setStoreName] = useState('');
     const [storeDescription, setStoreDescription] = useState('');
@@ -108,6 +136,106 @@ export function SellerDashboardPage() {
                     </div>
                 </div>
                 <SellerTabs />
+
+                {/* Store performance metrics — scoped to the seller's own store(s) (TB-129) */}
+                <section style={{ marginBottom: 28 }}>
+                    <h2 style={{ fontFamily: 'Outfit', fontSize: 20, fontWeight: 700, margin: '0 0 12px' }}>
+                        Store performance
+                    </h2>
+                    {summary.isLoading ? (
+                        <div style={{ ...card, marginBottom: 18 }}>Loading metrics…</div>
+                    ) : summary.isError || !summaryData ? (
+                        <div style={{ ...card, marginBottom: 18, color: '#ff8fa3' }}>Couldn't load metrics.</div>
+                    ) : (
+                        <div style={kpiGrid}>
+                            <Kpi label="Revenue" value={formatCurrency(summaryData.totalRevenue)} />
+                            <Kpi label="Orders" value={String(summaryData.totalOrders)} />
+                            <Kpi label="Low stock items" value={String(summaryData.lowStockCount)} accent="#ff8fa3" />
+                            <Kpi label="Today's orders" value={String(summaryData.todaysNewOrders)} />
+                        </div>
+                    )}
+
+                    <div style={{ ...card, marginBottom: 18 }}>
+                        <h3 style={{ fontFamily: 'Outfit', fontSize: 16, fontWeight: 700, margin: '0 0 12px' }}>
+                            Revenue (last 6 months)
+                        </h3>
+                        {revenue.isLoading ? (
+                            <p style={{ color: 'rgba(255,255,255,0.55)', margin: 0 }}>Loading…</p>
+                        ) : revenueData.length === 0 ? (
+                            <p style={{ color: 'rgba(255,255,255,0.55)', margin: 0 }}>No revenue data yet.</p>
+                        ) : (
+                            <ResponsiveContainer width="100%" height={240}>
+                                <LineChart data={revenueData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                                    <CartesianGrid stroke="rgba(255,255,255,0.08)" />
+                                    <XAxis dataKey="period" stroke="rgba(255,255,255,0.5)" fontSize={12} />
+                                    <YAxis stroke="rgba(255,255,255,0.5)" fontSize={12} />
+                                    <Tooltip
+                                        contentStyle={{ background: '#14141f', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, color: '#fff' }}
+                                        formatter={(v) => formatCurrency(Number(v))}
+                                    />
+                                    <Line type="monotone" dataKey="value" stroke="#a78bfa" strokeWidth={2} dot={{ r: 3 }} />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        )}
+                    </div>
+
+                    <div style={{ ...card, marginBottom: 18 }}>
+                        <h3 style={{ fontFamily: 'Outfit', fontSize: 16, fontWeight: 700, margin: '0 0 12px' }}>
+                            Orders by status
+                        </h3>
+                        {byStatus.isLoading ? (
+                            <p style={{ color: 'rgba(255,255,255,0.55)', margin: 0 }}>Loading…</p>
+                        ) : (byStatus.data ?? []).length === 0 ? (
+                            <p style={{ color: 'rgba(255,255,255,0.55)', margin: 0 }}>No orders yet.</p>
+                        ) : (
+                            <ResponsiveContainer width="100%" height={240}>
+                                <BarChart data={byStatus.data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                                    <CartesianGrid stroke="rgba(255,255,255,0.08)" />
+                                    <XAxis dataKey="status" stroke="rgba(255,255,255,0.5)" fontSize={12} />
+                                    <YAxis allowDecimals={false} stroke="rgba(255,255,255,0.5)" fontSize={12} />
+                                    <Tooltip
+                                        contentStyle={{ background: '#14141f', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, color: '#fff' }}
+                                        cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                                    />
+                                    <Bar dataKey="count" fill="#6366f1" radius={[6, 6, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        )}
+                    </div>
+
+                    <div style={{ ...card, marginBottom: 0, padding: 0 }}>
+                        <h3 style={{ fontFamily: 'Outfit', fontSize: 16, fontWeight: 700, margin: 0, padding: '18px 20px 0' }}>
+                            Top products
+                        </h3>
+                        {top.isLoading ? (
+                            <p style={{ color: 'rgba(255,255,255,0.55)', margin: 0, padding: '12px 20px 18px' }}>Loading…</p>
+                        ) : (top.data ?? []).length === 0 ? (
+                            <p style={{ color: 'rgba(255,255,255,0.55)', margin: 0, padding: '12px 20px 18px' }}>No sales yet.</p>
+                        ) : (
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, marginTop: 12 }}>
+                                <thead>
+                                    <tr style={{ textAlign: 'left', color: 'rgba(255,255,255,0.6)' }}>
+                                        <th style={th}>#</th>
+                                        <th style={th}>Product</th>
+                                        <th style={th}>Units sold</th>
+                                        <th style={th}>Revenue</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {(top.data ?? []).slice(0, 10).map((p, idx) => (
+                                        <tr key={p.productId} style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                                            <td style={{ ...td, color: 'rgba(255,255,255,0.5)' }}>{idx + 1}</td>
+                                            <td style={{ ...td, fontWeight: 600 }}>{p.productName}</td>
+                                            <td style={td}>{p.unitsSold}</td>
+                                            <td style={td}>{formatCurrency(p.revenue)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+                </section>
+
                 {/* Pending-store gate: required message + disabled selling actions */}
                 {sellingLocked && (
                     <div style={{ ...card, borderColor: 'rgba(255,178,77,0.3)', background: 'rgba(255,178,77,0.08)', marginBottom: 24 }}>
