@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build *)",
+      "Read(//mnt/c/Program Files/dotnet/**)",
+      "Read(//home/carl/.dotnet/**)",
+      "Bash(command -v dotnet.exe)",
+      "Read(//home/carl/**)",
+      "Read(//mnt/c/Users/User/Desktop/**)",
+      "WebSearch"
+    ]
+  }
+}
