@@ -7,9 +7,10 @@ export async function fetchSellerDashboardSummary(): Promise<DashboardSummary> {
     return res.data;
 }
 
-export async function fetchSellerRevenue(period = 'month'): Promise<PeriodPoint[]> {
+// Revenue time-series over a rolling window. `range` is one of 1d|15d|30d|3m|6m|1y.
+export async function fetchSellerRevenue(range = '30d'): Promise<PeriodPoint[]> {
     const res = await axiosInstance.get<PeriodPoint[]>('/api/v1/seller/dashboard/revenue', {
-        params: { period },
+        params: { period: range },
     });
     return res.data;
 }
