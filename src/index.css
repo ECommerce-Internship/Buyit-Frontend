@@ -81,6 +81,42 @@ body {
 .buyit-input::placeholder { color: rgba(255,255,255,0.36); }
 .lite-input::placeholder  { color: #9b97ad; }
 
+/* Brand scrollbar — themed to the purple gradient instead of the OS default,
+   applied across the whole app (page, modals, panels, dropdowns, tables). */
+* {
+  scrollbar-width: thin;                                   /* Firefox */
+  scrollbar-color: rgba(139,92,246,0.55) transparent;      /* thumb / track (Firefox) */
+}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  border: 2px solid transparent;                           /* insets the thumb from the edge */
+  background: linear-gradient(180deg, rgba(139,92,246,0.75), rgba(99,102,241,0.6));
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(139,92,246,0.95), rgba(99,102,241,0.85));
+  background-clip: padding-box;
+}
+/* Keep the auth modal's thumb clear of its 26px rounded corners. */
+.auth-shell::-webkit-scrollbar-track { margin: 12px 0; }
+
+/* Dropdowns — force a readable dark option list everywhere. The selects set
+   color:#fff, so options inherited white text and vanished on the light native
+   popup until hovered. Setting both colours fixes every <select> on the site. */
+select option,
+select optgroup {
+  background-color: #16151f;
+  color: #fff;
+}
+/* Light-themed selects (on light pages) keep a light, readable option list. */
+.lite-select option,
+.lite-select optgroup {
+  background-color: #fff;
+  color: #15131f;
+}
+
 /* Keyframes -----------------------------------------------------------*/
 @keyframes bobA       { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(-10px);} }
 @keyframes bobB       { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(-14px);} }

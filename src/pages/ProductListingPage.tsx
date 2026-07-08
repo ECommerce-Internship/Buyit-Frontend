@@ -170,7 +170,7 @@ export function ProductListingPage() {
                             <span style={{ color: '#9a97a8' }}>–</span>
                             <input type="number" min={0} value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} onBlur={commitPrice} placeholder="Max $" style={{ ...inputStyle, width: 84 }} />
                         </form>
-                        <select value={sortInUrl} onChange={(e) => setParam('sort', e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
+                        <select className="lite-select" value={sortInUrl} onChange={(e) => setParam('sort', e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
                             {(Object.keys(SORT_LABELS) as SortOption[]).map((k) => (<option key={k} value={k}>{SORT_LABELS[k]}</option>))}
                         </select>
                     </div>
