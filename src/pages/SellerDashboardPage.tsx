@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { LogOut, UserCog } from 'lucide-react';
 import {
-    ResponsiveContainer, LineChart, Line, BarChart, Bar,
+    ResponsiveContainer, AreaChart, Area,
     XAxis, YAxis, Tooltip, CartesianGrid,
 } from 'recharts';
 import { useAuth } from '../context/AuthContext';
@@ -27,6 +27,45 @@ const STATUS_COLORS: Record<StoreStatus, { bg: string; fg: string }> = {
     Suspended: { bg: 'rgba(255,93,122,0.14)',  fg: '#ff5d7a' },
     Rejected:  { bg: 'rgba(255,93,122,0.14)',  fg: '#ff5d7a' },
 };
+
+// Order status color mapping for the "Orders by status" donut (unlisted statuses fall back to gray).
+const ORDER_STATUS_COLORS: Record<string, string> = {
+    Delivered: '#6ee7a0',
+    Shipped: '#6d8cff',
+    Confirmed: '#a78bfa',
+    Pending: '#ffb24d',
+    Cancelled: '#ff5d7a',
+};
+// r chosen so the circle's circumference is ~100 — lets dasharray/percent line up 1:1.
+const DONUT_RADIUS = 15.9155;
+function buildDonutSegments(data: { status: string; count: number }[]) {
+    const total = data.reduce((sum, d) => sum + d.count, 0) || 1;
+    let cumulative = 0;
+    return data.map((d) => {
+        const percent = (d.count / total) * 100;
+        const dashoffset = 25 - cumulative;
+        cumulative += percent;
+        return { ...d, percent, dashoffset, color: ORDER_STATUS_COLORS[d.status] ?? '#9ca3af' };
+    });
+}
+
+// Maps {period, value} points onto a 380x130 viewBox for the revenue area chart.
+// Selectable windows for the revenue trend — same backend range tokens as the Admin dashboard.
+const RANGES = [
+    { key: '1d', label: '1D' },
+    { key: '15d', label: '15D' },
+    { key: '30d', label: '30D' },
+    { key: '3m', label: '3M' },
+    { key: '6m', label: '6M' },
+    { key: '1y', label: '1Y' },
+];
+// Shortens a bucket label for the axis: "2026-07-07 14:00"->"14:00", "2026-07-07"->"07-07",
+// leaving month ("2026-07") and ISO-week ("2026-W27") labels as-is.
+function shortTick(label: string): string {
+    if (label.includes(' ')) return label.split(' ')[1];
+    const m = /^\d{4}-(\d{2})-(\d{2})$/.exec(label);
+    return m ? `${m[1]}-${m[2]}` : label;
+}
 
 function Kpi({ label, value, accent }: { label: string; value: string; accent?: string }) {
     return (
@@ -52,6 +91,20 @@ const kpiGrid: CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(a
 const kpiCard: CSSProperties = { padding: 18, borderRadius: 16, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' };
 const th: CSSProperties = { padding: '12px 14px', fontWeight: 600, fontSize: 12.5, textTransform: 'uppercase', letterSpacing: 0.4 };
 const td: CSSProperties = { padding: '10px 14px', verticalAlign: 'middle' };
+const rangeBar: CSSProperties = {
+    display: 'inline-flex', gap: 2, padding: 3, borderRadius: 10,
+    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)',
+};
+const rangeBtn: CSSProperties = {
+    padding: '5px 11px', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600,
+    color: 'rgba(255,255,255,0.6)', background: 'transparent', border: 'none',
+    borderRadius: 7, cursor: 'pointer', transition: 'color 0.15s, background 0.15s',
+};
+const rangeBtnActive: CSSProperties = {
+    color: '#fff',
+    background: 'linear-gradient(180deg, rgba(139,92,246,0.5), rgba(99,102,241,0.28))',
+    boxShadow: '0 6px 16px -10px rgba(124,92,246,0.9)',
+};
 
 export function SellerDashboardPage() {
     const { user, logout } = useAuth();
@@ -62,10 +115,12 @@ export function SellerDashboardPage() {
     // TB-129: store performance metrics, scoped to the seller's own store(s) server-side.
     const summary = useSellerDashboardSummary();
     const summaryData = summary.data;
-    const revenue = useSellerRevenue('month');
-    const revenueData = (revenue.data ?? []).slice(-6);
+    const [range, setRange] = useState('30d');
+    const revenue = useSellerRevenue(range);
+    const revenueData = revenue.data ?? [];
     const top = useSellerTopProducts();
     const byStatus = useSellerOrdersByStatus();
+    const donutSegments = useMemo(() => buildDonutSegments(byStatus.data ?? []), [byStatus.data]);
 
     const [storeName, setStoreName] = useState('');
     const [storeDescription, setStoreDescription] = useState('');
@@ -155,31 +210,70 @@ export function SellerDashboardPage() {
                         </div>
                     )}
 
-                    <div style={{ ...card, marginBottom: 18 }}>
-                        <h3 style={{ fontFamily: 'Outfit', fontSize: 16, fontWeight: 700, margin: '0 0 12px' }}>
-                            Revenue (last 6 months)
-                        </h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: 16, marginBottom: 18 }}>
+                        <div style={{ ...card, background: 'linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+                            <h3 style={{ fontFamily: 'Outfit', fontSize: 16, fontWeight: 700, margin: 0 }}>
+                                Revenue trend
+                            </h3>
+                            <div style={rangeBar} role="group" aria-label="Revenue period">
+                                {RANGES.map((r) => {
+                                    const active = r.key === range;
+                                    return (
+                                        <button
+                                            key={r.key}
+                                            type="button"
+                                            onClick={() => setRange(r.key)}
+                                            aria-pressed={active}
+                                            style={{ ...rangeBtn, ...(active ? rangeBtnActive : null) }}
+                                        >
+                                            {r.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
                         {revenue.isLoading ? (
                             <p style={{ color: 'rgba(255,255,255,0.55)', margin: 0 }}>Loading…</p>
                         ) : revenueData.length === 0 ? (
                             <p style={{ color: 'rgba(255,255,255,0.55)', margin: 0 }}>No revenue data yet.</p>
                         ) : (
                             <ResponsiveContainer width="100%" height={240}>
-                                <LineChart data={revenueData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-                                    <CartesianGrid stroke="rgba(255,255,255,0.08)" />
-                                    <XAxis dataKey="period" stroke="rgba(255,255,255,0.5)" fontSize={12} />
-                                    <YAxis stroke="rgba(255,255,255,0.5)" fontSize={12} />
+                                <AreaChart data={revenueData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="sellerRevFill" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor="#a78bfa" stopOpacity={0.45} />
+                                            <stop offset="100%" stopColor="#a78bfa" stopOpacity={0} />
+                                        </linearGradient>
+                                        <linearGradient id="sellerRevStroke" x1="0" y1="0" x2="1" y2="0">
+                                            <stop offset="0%" stopColor="#a78bfa" />
+                                            <stop offset="100%" stopColor="#f472b6" />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+                                    <XAxis
+                                        dataKey="period" stroke="rgba(255,255,255,0.5)" fontSize={12}
+                                        tickLine={false} axisLine={false}
+                                        tickFormatter={shortTick} minTickGap={28} interval="preserveStartEnd"
+                                    />
+                                    <YAxis stroke="rgba(255,255,255,0.5)" fontSize={12} tickLine={false} axisLine={false} />
                                     <Tooltip
                                         contentStyle={{ background: '#14141f', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, color: '#fff' }}
-                                        formatter={(v) => formatCurrency(Number(v))}
+                                        formatter={(v) => [formatCurrency(Number(v)), 'Revenue']}
                                     />
-                                    <Line type="monotone" dataKey="value" stroke="#a78bfa" strokeWidth={2} dot={{ r: 3 }} />
-                                </LineChart>
+                                    <Area
+                                        type="monotone" dataKey="value"
+                                        stroke="url(#sellerRevStroke)" strokeWidth={2.5}
+                                        fill="url(#sellerRevFill)" dot={false}
+                                        activeDot={{ r: 4, fill: '#f472b6', stroke: '#14141f', strokeWidth: 2 }}
+                                        isAnimationActive animationDuration={700} animationEasing="ease-out"
+                                    />
+                                </AreaChart>
                             </ResponsiveContainer>
                         )}
                     </div>
 
-                    <div style={{ ...card, marginBottom: 18 }}>
+                    <div style={card}>
                         <h3 style={{ fontFamily: 'Outfit', fontSize: 16, fontWeight: 700, margin: '0 0 12px' }}>
                             Orders by status
                         </h3>
@@ -188,21 +282,33 @@ export function SellerDashboardPage() {
                         ) : (byStatus.data ?? []).length === 0 ? (
                             <p style={{ color: 'rgba(255,255,255,0.55)', margin: 0 }}>No orders yet.</p>
                         ) : (
-                            <ResponsiveContainer width="100%" height={240}>
-                                <BarChart data={byStatus.data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-                                    <CartesianGrid stroke="rgba(255,255,255,0.08)" />
-                                    <XAxis dataKey="status" stroke="rgba(255,255,255,0.5)" fontSize={12} />
-                                    <YAxis allowDecimals={false} stroke="rgba(255,255,255,0.5)" fontSize={12} />
-                                    <Tooltip
-                                        contentStyle={{ background: '#14141f', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, color: '#fff' }}
-                                        cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                                    />
-                                    <Bar dataKey="count" fill="#6366f1" radius={[6, 6, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        )}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
+                                <svg width="132" height="132" viewBox="0 0 42 42">
+                                    <circle cx="21" cy="21" r={DONUT_RADIUS} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="5" />
+                                    {donutSegments.map((seg) => (
+                                        <circle
+                                            key={seg.status} cx="21" cy="21" r={DONUT_RADIUS} fill="none"
+                                            stroke={seg.color} strokeWidth="5"
+                                            strokeDasharray={`${seg.percent} ${100 - seg.percent}`}
+                                            strokeDashoffset={seg.dashoffset}
+                                            transform="rotate(-90 21 21)"
+                                        >
+                                            <title>{`${seg.status}: ${seg.count}`}</title>
+                                        </circle>
+                                    ))}
+                                </svg>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 9, fontSize: 13.5 }}>
+                                    {donutSegments.map((seg) => (
+                                        <span key={seg.status} style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'rgba(255,255,255,0.75)' }}>
+                                            <span style={{ width: 10, height: 10, borderRadius: 3, background: seg.color }} />
+                                            {seg.status} — {seg.count} ({seg.percent.toFixed(0)}%)
+                                        </span>
+                                    ))}
+                                </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
-
                     <div style={{ ...card, marginBottom: 0, padding: 0 }}>
                         <h3 style={{ fontFamily: 'Outfit', fontSize: 16, fontWeight: 700, margin: 0, padding: '18px 20px 0' }}>
                             Top products

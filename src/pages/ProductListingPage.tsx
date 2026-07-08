@@ -11,7 +11,7 @@ import { useDebounce } from '../hooks/useDebounce';
 import { ProductCard } from '../components/products/ProductCard';
 import { SkeletonCard } from '../components/products/SkeletonCard';
 import { EmptyState } from '../components/ui/EmptyState';
-import { SearchX } from 'lucide-react';
+import { SearchX, User, Package, ShoppingCart } from 'lucide-react';
 import { Pagination } from '../components/products/Pagination';
 
 const PAGE_SIZE = 12;
@@ -26,6 +26,29 @@ const SORT_MAP: Record<SortOption, { sortBy: 'name' | 'price' | 'createdAt'; sor
 const SORT_LABELS: Record<SortOption, string> = {
     name_asc: 'Name: A–Z', name_desc: 'Name: Z–A', price_asc: 'Price: Low–High', price_desc: 'Price: High–Low', newest: 'Newest',
 };
+
+function IconNavLink({ to, label, children }: { to: string; label: string; children: React.ReactNode }) {
+    const [hover, setHover] = useState(false);
+    return (
+        <Link
+            to={to}
+            title={label}
+            aria-label={label}
+            onMouseEnter={() => setHover(true)}
+            onMouseLeave={() => setHover(false)}
+            style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 38, height: 38, borderRadius: 10,
+                color: hover ? '#7c5cff' : '#56536a',
+                background: hover ? '#f1edff' : '#fff',
+                border: '1px solid #eceaf2',
+                textDecoration: 'none', transition: 'all .2s ease',
+            }}
+        >
+            {children}
+        </Link>
+    );
+}
 
 export function ProductListingPage() {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -107,14 +130,21 @@ export function ProductListingPage() {
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4-4" /></svg>
                         <input value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="Search products…" style={{ border: 'none', outline: 'none', background: 'transparent', fontFamily: 'inherit', fontSize: 13.5, color: '#15131f', width: '100%' }} />
                     </div>
-                    {isAuthenticated && (
-                        <Link to="/account" style={{ fontSize: 13.5, fontWeight: 600, color: '#7c5cff', textDecoration: 'none', whiteSpace: 'nowrap' }}>
-                            My account
-                        </Link>
-                    )}
-                    <Link to="/cart" style={{ fontSize: 13.5, fontWeight: 600, color: '#7c5cff', textDecoration: 'none', whiteSpace: 'nowrap' }}>
-                        My CART
-                    </Link>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {isAuthenticated && (
+                            <IconNavLink to="/orders" label="My orders">
+                                <Package size={18} strokeWidth={2} />
+                            </IconNavLink>
+                        )}
+                        {isAuthenticated && (
+                            <IconNavLink to="/account" label="My account">
+                                <User size={18} strokeWidth={2} />
+                            </IconNavLink>
+                        )}
+                        <IconNavLink to="/cart" label="My cart">
+                            <ShoppingCart size={18} strokeWidth={2} />
+                        </IconNavLink>
+                    </div>
                 </div>
             </header>
 
