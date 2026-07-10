@@ -1,8 +1,6 @@
 // src/pages/ProductListingPage.tsx
 import { useEffect, useState, type CSSProperties } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
-import Logo from '../components/Logo';
-import { useAuth } from '../context/AuthContext';
+import { useSearchParams } from 'react-router-dom';
 import type { SortOption } from '../types/product';
 import type { ProductQueryParams } from '../api/products';
 import { useProducts } from '../hooks/useProducts';
@@ -11,8 +9,9 @@ import { useDebounce } from '../hooks/useDebounce';
 import { ProductCard } from '../components/products/ProductCard';
 import { SkeletonCard } from '../components/products/SkeletonCard';
 import { EmptyState } from '../components/ui/EmptyState';
-import { SearchX, User, Package, ShoppingCart } from 'lucide-react';
+import { SearchX } from 'lucide-react';
 import { Pagination } from '../components/products/Pagination';
+import { PageHeader } from '../components/products/PageHeader';
 
 const PAGE_SIZE = 12;
 
@@ -27,33 +26,8 @@ const SORT_LABELS: Record<SortOption, string> = {
     name_asc: 'Name: A–Z', name_desc: 'Name: Z–A', price_asc: 'Price: Low–High', price_desc: 'Price: High–Low', newest: 'Newest',
 };
 
-function IconNavLink({ to, label, children }: { to: string; label: string; children: React.ReactNode }) {
-    const [hover, setHover] = useState(false);
-    return (
-        <Link
-            to={to}
-            title={label}
-            aria-label={label}
-            onMouseEnter={() => setHover(true)}
-            onMouseLeave={() => setHover(false)}
-            style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                width: 38, height: 38, borderRadius: 10,
-                color: hover ? '#7c5cff' : '#56536a',
-                background: hover ? '#f1edff' : '#fff',
-                border: '1px solid #eceaf2',
-                textDecoration: 'none', transition: 'all .2s ease',
-            }}
-        >
-            {children}
-        </Link>
-    );
-}
-
 export function ProductListingPage() {
     const [searchParams, setSearchParams] = useSearchParams();
-    const { isAuthenticated } = useAuth();
-
     const searchInUrl = searchParams.get('search') ?? '';
     const categoryInUrl = searchParams.get('category') ?? '';
     const minPriceInUrl = searchParams.get('minPrice') ?? '';
@@ -119,34 +93,8 @@ export function ProductListingPage() {
 
     return (
         <div style={{ minHeight: '100vh', width: '100%', background: '#f7f6fb', fontFamily: "'Plus Jakarta Sans',sans-serif", color: '#15131f', paddingBottom: 80 }}>
-            {/* sticky header with the landing logo + working search */}
-            <header style={{ position: 'sticky', top: 0, zIndex: 20, background: 'rgba(247,246,251,.86)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderBottom: '1px solid #eceaf2' }}>
-                <div style={{ maxWidth: 1180, margin: '0 auto', padding: '13px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-                        <Logo height={26} to="/" />
-                        <span style={{ fontSize: 13, color: '#9a97a8', fontWeight: 500 }}>/ Catalogue</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px', background: '#fff', border: '1px solid #eceaf2', borderRadius: 11, minWidth: 240, color: '#9a97a8' }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4-4" /></svg>
-                        <input value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="Search products…" style={{ border: 'none', outline: 'none', background: 'transparent', fontFamily: 'inherit', fontSize: 13.5, color: '#15131f', width: '100%' }} />
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        {isAuthenticated && (
-                            <IconNavLink to="/orders" label="My orders">
-                                <Package size={18} strokeWidth={2} />
-                            </IconNavLink>
-                        )}
-                        {isAuthenticated && (
-                            <IconNavLink to="/account" label="My account">
-                                <User size={18} strokeWidth={2} />
-                            </IconNavLink>
-                        )}
-                        <IconNavLink to="/cart" label="My cart">
-                            <ShoppingCart size={18} strokeWidth={2} />
-                        </IconNavLink>
-                    </div>
-                </div>
-            </header>
+            {/* sticky header shared with ProductDetailPage — see components/products/PageHeader.tsx */}
+            <PageHeader crumbLabel="Catalogue" searchValue={searchInput} onSearchChange={setSearchInput} />
 
             <div style={{ maxWidth: 1180, margin: '0 auto', padding: '0 28px' }}>
                 <div style={{ padding: '38px 0 22px' }}>
