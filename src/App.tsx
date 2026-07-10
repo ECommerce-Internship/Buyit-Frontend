@@ -27,6 +27,7 @@ import { StorefrontPage } from './pages/StorefrontPage';
 import { ChatWidget } from './components/chat/ChatWidget';
 import { MyOrdersPage } from './pages/MyOrdersPage';
 import { OrderDetailPage } from './pages/OrderDetailPage';
+import { NotFoundPage } from './pages/NotFoundPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import type { ReactElement } from 'react';
 
@@ -85,6 +86,9 @@ function App() {
                         <Route path="/seller/coupons" element={page(<SellerCouponsPage />)} />
                     </Route>
                 </Route>
+
+                {/* Catch-all: anything that doesn't match a route above. Must be LAST. */}
+                <Route path="*" element={page(<NotFoundPage />)} />
             </Routes>
             <ChatWidget />
         </>
