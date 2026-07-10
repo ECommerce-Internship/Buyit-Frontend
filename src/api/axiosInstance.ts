@@ -22,14 +22,19 @@ declare module 'axios' {
     }
 }
 
+// When VITE_API_URL is blank the client talks to its OWN origin (relative "/api/..." URLs).
+// In production the Vercel rewrite in vercel.json proxies "/api/*" to the backend, which makes
+// the refresh-token cookie FIRST-PARTY (same site as the app) so it survives a page reload.
+// Cross-site (third-party) cookies are blocked by Safari/Chrome, which was the "logged out on
+// refresh" bug. Locally VITE_API_URL is set to http://localhost:5000, so behaviour is unchanged.
+const API_URL = import.meta.env.VITE_API_URL ?? '';
+
 // How many times to re-send a request that got NO response (the server reset the connection
 // under load), and how long to wait between tries. The deployed API runs bcrypt logins on a
 // tiny instance that intermittently drops heavy POSTs, so the same request usually succeeds on
 // a second try. Keep this small with a backoff: retries add load to an already-busy server.
 const MAX_NETWORK_RETRIES = 2;
 const NETWORK_RETRY_BASE_DELAY_MS = 500;
-
-const API_URL = import.meta.env.VITE_API_URL;
 
 // One configured Axios client the whole app shares.
 const axiosInstance = axios.create({

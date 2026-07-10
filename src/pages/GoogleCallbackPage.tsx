@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import axiosInstance from '../api/axiosInstance';
 import { LOGIN_PATH } from '../lib/authRoutes';
 import type { AuthResponse } from '../types/auth';
 
@@ -66,15 +67,29 @@ export function GoogleCallbackPage() {
             return;
         }
 
-        // login() stores tokens in memory (AuthContext), builds the user, and navigates to
-        // the role's home page. Keep it in its OWN boundary so a login failure isn't
-        // mislabeled as a "could not read" decode error.
-        try {
-            login(authResponse);
-        } catch {
-            toast.error('Could not complete sign-in. Please try again.');
-            navigate(LOGIN_PATH, { replace: true });
+        // Unlike email/password login, the Google callback runs on the BACKEND origin, so it can't
+        // set a refresh cookie THIS app's domain can read on a later reload — the token instead
+        // arrives here in the URL fragment. Trade it for a first-party HttpOnly cookie by calling
+        // the backend over our OWN origin (the same-origin "/api" proxy): that response sets the
+        // cookie on the app's domain, so the session now survives a page refresh. The backend
+        // ROTATES the token, so the copy that was in the fragment is revoked the instant it's used.
+        // _skipAuthRefresh keeps a 401 here from triggering the interceptor's refresh/logout loop.
+        async function completeSignIn(oauth: AuthResponse) {
+            try {
+                const res = await axiosInstance.post<AuthResponse>(
+                    '/api/v1/auth/oauth-exchange',
+                    { refreshToken: oauth.refreshToken },
+                    { _skipAuthRefresh: true },
+                );
+                // login() stores the fresh access token + user in memory and navigates by role.
+                login(res.data);
+            } catch {
+                toast.error('Could not complete sign-in. Please try again.');
+                navigate(LOGIN_PATH, { replace: true });
+            }
         }
+
+        completeSignIn(authResponse);
     }, [login, navigate]);
 
     // A minimal "please wait" screen while the effect above runs.

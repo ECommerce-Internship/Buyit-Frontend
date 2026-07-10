@@ -205,7 +205,11 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
   // TB-133: start the real Google OAuth flow. This is a FULL-PAGE navigation (not Axios) because
   // Google must take over the top-level browser to show its consent screen and set its cookies.
     function handleGoogleLogin() {
-        const apiUrl = import.meta.env.VITE_API_URL;
+        // Google sign-in is a full-page redirect (not Axios), so it CANNOT use the same-origin
+        // "/api" proxy the way our XHR calls do — the browser must land directly on the backend so
+        // the g_state anti-CSRF cookie and Google's redirect_uri both resolve on the backend origin.
+        // Hence a dedicated absolute-backend var; it falls back to VITE_API_URL for local dev.
+        const apiUrl = import.meta.env.VITE_BACKEND_ORIGIN || import.meta.env.VITE_API_URL;
         if (!apiUrl) {
             setFormError('Google sign-in is unavailable right now. Please try again later.');
             return;
