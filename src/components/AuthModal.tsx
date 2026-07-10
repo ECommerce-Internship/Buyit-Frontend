@@ -77,8 +77,18 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
   const [formError, setFormError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [showPass, setShowPass] = useState(false);
-  const { login, user, isAuthenticated } = useAuth(); // login() stores token + user after a real auth call
+    const [showPass, setShowPass] = useState(false);
+    const { login, user, isAuthenticated } = useAuth(); // login() stores token + user after a real auth call
+    // Forgot-password flow — a self-contained sub-flow inside this same modal, not a new AuthMode
+    // (keeps every other openAuth(mode, role) caller untouched).
+    const [forgotStep, setForgotStep] = useState<'closed' | 'email' | 'code'>('closed');
+    const [resetEmail, setResetEmail] = useState('');
+    const [resetCode, setResetCode] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [showNewPass, setShowNewPass] = useState(false);
+    const [resetLoading, setResetLoading] = useState(false);
+    const [resetError, setResetError] = useState('');
+    const [resetDone, setResetDone] = useState(false);
 
   // Esc to close.
   useEffect(() => {
@@ -96,7 +106,7 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
   const isSellerUpgrade = isRegister && isSeller && isAuthenticated;
   const score = strengthScore(password);
 
-  const resetMsgs = () => { setErrors({}); setFormError(''); };
+  const resetMsgs = () => { setErrors({}); setFormError(''); setResetDone(false); };
   const clearErr = (k: keyof Errors) => setErrors((e) => ({ ...e, [k]: '' }));
 
   function validate(): Errors {
@@ -160,7 +170,11 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
                 ? await axiosInstance.post<AuthResponse>(
                     '/api/v1/auth/login',
                     { email, password },
-                    { _skipAuthRefresh: true },
+                    // _retryOnNetworkError: the deployed API intermittently resets heavy bcrypt
+                    // logins under load; a resend usually succeeds. Safe here because login is
+                    // idempotent (it just issues a token) — unlike register, which could 409 if a
+                    // lost-response first attempt had already created the account.
+                    { _skipAuthRefresh: true, _retryOnNetworkError: true },
                 )
                 : await axiosInstance.post<AuthResponse>(
                     '/api/v1/auth/register',
@@ -190,17 +204,78 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
 
   // TB-133: start the real Google OAuth flow. This is a FULL-PAGE navigation (not Axios) because
   // Google must take over the top-level browser to show its consent screen and set its cookies.
-  function handleGoogleLogin() {
-    const apiUrl = import.meta.env.VITE_API_URL;
-    if (!apiUrl) {
-      setFormError('Google sign-in is unavailable right now. Please try again later.');
-      return;
+    function handleGoogleLogin() {
+        const apiUrl = import.meta.env.VITE_API_URL;
+        if (!apiUrl) {
+            setFormError('Google sign-in is unavailable right now. Please try again later.');
+            return;
+        }
+        window.location.href = `${apiUrl}/api/auth/login/google`;
     }
-    window.location.href = `${apiUrl}/api/auth/login/google`;
-  }
-
-  const successTitle = isLogin ? 'Welcome back!' : (isSeller ? 'Store created' : 'Account created');
-  const successMessage = isLogin
+    // Forgot-password step 1: request a 6-digit code emailed to the account, if one exists
+    // (the backend always returns 200 here regardless, so no account enumeration).
+    async function submitForgotEmail(ev: FormEvent) {
+        ev.preventDefault();
+        if (!resetEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resetEmail.trim())) {
+            setResetError('Enter a valid email.');
+            return;
+        }
+        setResetError('');
+        setResetLoading(true);
+        try {
+            await axiosInstance.post(
+                '/api/v1/auth/forgot-password',
+                { email: resetEmail.trim() },
+                { _skipAuthRefresh: true },
+            );
+            setForgotStep('code');
+        } catch (err) {
+            const message = axios.isAxiosError<{ detail?: string }>(err)
+                ? err.response?.data?.detail ?? 'Something went wrong. Please try again.'
+                : 'Something went wrong. Please try again.';
+            setResetError(message);
+        } finally {
+            setResetLoading(false);
+        }
+    }
+    // Forgot-password step 2: validate the emailed code and set the new password.
+    async function submitResetPassword(ev: FormEvent) {
+        ev.preventDefault();
+        if (!/^[0-9]{6}$/.test(resetCode.trim())) {
+            setResetError('Enter the 6-digit code from your email.');
+            return;
+        }
+        if (newPassword.length < 8) {
+            setResetError('Use at least 8 characters.');
+            return;
+        }
+        setResetError('');
+        setResetLoading(true);
+        try {
+            await axiosInstance.post(
+                '/api/v1/auth/reset-password',
+                { email: resetEmail.trim(), code: resetCode.trim(), newPassword },
+                { _skipAuthRefresh: true },
+            );
+            // Drop back to the login tab, prefilled, with a success banner.
+            setEmail(resetEmail.trim());
+            setPassword('');
+            setResetCode('');
+            setNewPassword('');
+            setForgotStep('closed');
+            setMode('login');
+            setResetDone(true);
+        } catch (err) {
+            const message = axios.isAxiosError<{ detail?: string }>(err)
+                ? err.response?.data?.detail ?? 'Invalid or expired code. Please try again.'
+                : 'Invalid or expired code. Please try again.';
+            setResetError(message);
+        } finally {
+            setResetLoading(false);
+        }
+    }
+    const successTitle = isLogin ? 'Welcome back!' : (isSeller ? 'Store created' : 'Account created');
+    const successMessage = isLogin
     ? 'You\u2019re signed in. Time to explore the marketplace.'
     : (isSeller ? 'Your store is now Pending review \u2014 an admin will approve it shortly.'
                 : 'Your Buyit account is ready. Start shopping across every store.');
@@ -229,10 +304,93 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
             </div>
             <h2 style={{ margin: '0 0 8px', fontFamily: 'Outfit', fontSize: 23, fontWeight: 700, color: '#fff' }}>{successTitle}</h2>
             <p style={{ margin: '0 0 26px', fontSize: 14.5, lineHeight: 1.55, color: 'rgba(255,255,255,0.6)' }}>{successMessage}</p>
-            <button onClick={onClose} style={{ width: '100%', padding: 14, fontFamily: 'inherit', fontSize: 15, fontWeight: 600, color: '#fff', border: 'none', borderRadius: 13, cursor: 'pointer', background: 'linear-gradient(120deg, #8b5cf6, #6366f1)' }}>Done</button>
-          </div>
-        ) : (
-          <div>
+                      <button onClick={onClose} style={{ width: '100%', padding: 14, fontFamily: 'inherit', fontSize: 15, fontWeight: 600, color: '#fff', border: 'none', borderRadius: 13, cursor: 'pointer', background: 'linear-gradient(120deg, #8b5cf6, #6366f1)' }}>Done</button>
+                  </div>
+              ) : forgotStep !== 'closed' ? (
+                  <div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                              <img src={buyitIcon} alt="" aria-hidden style={{ height: 28, width: 'auto', display: 'block' }} />
+                              <img src={buyitWordmark} alt="Buyit" style={{ height: 19, width: 'auto', display: 'block' }} />
+                          </div>
+                          <Hoverable as="button" onClick={onClose} aria-label="Close"
+                              style={{ width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, color: 'rgba(255,255,255,0.7)', cursor: 'pointer' }}
+                              hoverStyle={{ color: '#fff' }}>
+                              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
+                          </Hoverable>
+                      </div>
+
+                      <h2 style={{ margin: '0 0 4px', fontFamily: 'Outfit', fontSize: 22, fontWeight: 700, letterSpacing: '-0.01em', color: '#fff' }}>
+                          {forgotStep === 'email' ? 'Reset your password' : 'Enter your reset code'}
+                      </h2>
+                      <p style={{ margin: '0 0 20px', fontSize: 13.5, color: 'rgba(255,255,255,0.5)' }}>
+                          {forgotStep === 'email'
+                              ? "Enter your account email and we'll send you a 6-digit code."
+                              : `We sent a code to ${resetEmail}. It expires in 15 minutes.`}
+                      </p>
+
+                      {forgotStep === 'email' ? (
+                          <form onSubmit={submitForgotEmail} noValidate>
+                              <div>
+                                  <label htmlFor="fp-email" style={labelStyle}>Email</label>
+                                  <Hoverable as="input" id="fp-email" className="buyit-input" type="email" value={resetEmail}
+                                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setResetEmail(e.target.value)}
+                                      placeholder="you@example.com" style={fieldStyle(!!resetError)} focusStyle={focusStyle} />
+                              </div>
+                              {resetError && (
+                                  <div style={{ margin: '14px 0', padding: '11px 13px', borderRadius: 11, background: 'rgba(255,93,122,0.12)', border: '1px solid rgba(255,93,122,0.3)', fontSize: 13, color: '#ff8fa3' }}>{resetError}</div>
+                              )}
+                              <button type="submit" disabled={resetLoading}
+                                  style={{ width: '100%', marginTop: 16, padding: 14, fontFamily: 'inherit', fontSize: 15, fontWeight: 600, color: '#fff', border: 'none', borderRadius: 13, cursor: resetLoading ? 'wait' : 'pointer', background: 'linear-gradient(120deg,#8b5cf6,#6366f1)', opacity: resetLoading ? 0.8 : 1 }}>
+                                  {resetLoading ? 'Sending…' : 'Send reset code'}
+                              </button>
+                          </form>
+                      ) : (
+                          <form onSubmit={submitResetPassword} noValidate>
+                              <div>
+                                  <label htmlFor="fp-code" style={labelStyle}>6-digit code</label>
+                                  <Hoverable as="input" id="fp-code" className="buyit-input" type="text" inputMode="numeric" maxLength={6} value={resetCode}
+                                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setResetCode(e.target.value.replace(/\D/g, ''))}
+                                      placeholder="123456" style={fieldStyle(!!resetError, { letterSpacing: 4 })} focusStyle={focusStyle} />
+                              </div>
+                              <div style={{ marginTop: 14 }}>
+                                  <label htmlFor="fp-newpass" style={labelStyle}>New password</label>
+                                  <div style={{ position: 'relative' }}>
+                                      <Hoverable as="input" id="fp-newpass" className="buyit-input" type={showNewPass ? 'text' : 'password'} value={newPassword}
+                                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPassword(e.target.value)}
+                                          placeholder="At least 8 characters" style={fieldStyle(!!resetError, { paddingRight: 44 })} focusStyle={focusStyle} />
+                                      <Hoverable as="button" type="button" onClick={() => setShowNewPass((v) => !v)} aria-label="Toggle password"
+                                          style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', borderRadius: 8, color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}
+                                          hoverStyle={{ color: '#b9a9ff' }}>
+                                          <EyeIcon off={showNewPass} />
+                                      </Hoverable>
+                                  </div>
+                              </div>
+                              {resetError && (
+                                  <div style={{ margin: '14px 0', padding: '11px 13px', borderRadius: 11, background: 'rgba(255,93,122,0.12)', border: '1px solid rgba(255,93,122,0.3)', fontSize: 13, color: '#ff8fa3' }}>{resetError}</div>
+                              )}
+                              <button type="submit" disabled={resetLoading}
+                                  style={{ width: '100%', marginTop: 16, padding: 14, fontFamily: 'inherit', fontSize: 15, fontWeight: 600, color: '#fff', border: 'none', borderRadius: 13, cursor: resetLoading ? 'wait' : 'pointer', background: 'linear-gradient(120deg,#8b5cf6,#6366f1)', opacity: resetLoading ? 0.8 : 1 }}>
+                                  {resetLoading ? 'Resetting…' : 'Reset password'}
+                              </button>
+                              <p style={{ margin: '14px 0 0', textAlign: 'center' }}>
+                                  <button type="button" onClick={() => { setForgotStep('email'); setResetCode(''); setNewPassword(''); setResetError(''); }}
+                                      style={{ background: 'none', border: 'none', padding: 0, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: 'rgba(255,255,255,0.55)' }}>
+                                      Didn't get a code? Try a different email
+                                  </button>
+                              </p>
+                          </form>
+                      )}
+
+                      <p style={{ margin: '18px 0 0', textAlign: 'center', fontSize: 13.5, color: 'rgba(255,255,255,0.55)' }}>
+                          <button onClick={() => { setForgotStep('closed'); setResetError(''); }}
+                              style={{ background: 'none', border: 'none', padding: 0, fontFamily: 'inherit', fontSize: 13.5, fontWeight: 600, cursor: 'pointer', backgroundImage: 'linear-gradient(120deg, #c4b5fd, #ff9aa9)', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent', color: 'transparent' }}>
+                              Back to sign in
+                          </button>
+                      </p>
+                  </div>
+              ) : (
+                  <div>
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
@@ -276,7 +434,12 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
               <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>or</span>
               <span style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.1)' }} />
             </div>
-
+            {isLogin && resetDone && (
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9, marginBottom: 16, padding: '11px 13px', borderRadius: 12, background: 'rgba(110,231,160,0.1)', border: '1px solid rgba(110,231,160,0.3)' }}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6ee7a0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none', marginTop: 1 }}><path d="M20 6 9 17l-5-5" /></svg>
+                <span style={{ fontSize: 12.5, lineHeight: 1.45, color: '#a9f0c4' }}>Password updated — sign in with your new password below.</span>
+              </div>
+            )}
             {/* `key` remounts the form when switching mode/role, matching the source's formKey */}
             <form onSubmit={submit} noValidate key={`${mode}-${role}`} style={{ animation: 'authFade .3s ease' }}>
               {/* Logged-in customer upgrading: skip identity fields, show who's being upgraded. */}
@@ -383,7 +546,13 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
 
               {isLogin && (
                 <div style={{ textAlign: 'right', margin: '-4px 0 14px' }}>
-                  <Hoverable as="a" href="#" onClick={(e: React.MouseEvent) => e.preventDefault()}
+                  <Hoverable as="a" href="#"
+                    onClick={(e: React.MouseEvent) => {
+                      e.preventDefault();
+                      setResetEmail(email);
+                      setResetError('');
+                      setForgotStep('email');
+                    }}
                     style={{ fontSize: 13, textDecoration: 'none', color: 'rgba(255,255,255,0.55)' }} hoverStyle={{ color: '#b9a9ff' }}>
                     Forgot password?
                   </Hoverable>
