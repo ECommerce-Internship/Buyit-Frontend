@@ -21,6 +21,8 @@ import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { AdminPaymentsPage } from './pages/admin/AdminPaymentsPage';
 import { AdminCategoriesPage } from './pages/admin/AdminCategoriesPage';
 import { AdminStoresPage } from './pages/admin/AdminStoresPage';
+import { AdminCouponsPage } from './pages/admin/AdminCouponsPage';
+import { SellerCouponsPage } from './pages/seller/SellerCouponsPage';
 import { StorefrontPage } from './pages/StorefrontPage';
 import { ChatWidget } from './components/chat/ChatWidget';
 import { MyOrdersPage } from './pages/MyOrdersPage';
@@ -71,6 +73,7 @@ function App() {
                         <Route path="/admin/payments" element={page(<AdminPaymentsPage />)} />
                         <Route path="/admin/categories" element={page(<AdminCategoriesPage />)} />
                         <Route path="/admin/stores" element={page(<AdminStoresPage />)} />
+                        <Route path="/admin/coupons" element={page(<AdminCouponsPage />)} />
                     </Route>
 
                     {/* Logged in AND Seller. */}
@@ -79,6 +82,7 @@ function App() {
                         <Route path="/seller/products" element={page(<SellerProductsPage />)} />
                         <Route path="/seller/inventory" element={page(<SellerInventoryPage />)} />
                         <Route path="/seller/orders" element={page(<SellerOrdersPage />)} />
+                        <Route path="/seller/coupons" element={page(<SellerCouponsPage />)} />
                     </Route>
                 </Route>
             </Routes>

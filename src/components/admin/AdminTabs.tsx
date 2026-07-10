@@ -13,6 +13,7 @@ const TABS = [
     { to: '/admin/payments', label: 'Payments' }, // from TB-136
     { to: '/admin/categories', label: 'Categories' }, // from TB-137
     { to: '/admin/stores', label: 'Stores' }, // from TB-140
+    { to: '/admin/coupons', label: 'Coupons' }, // TB-157
 ];
 
 // Left side panel shared by every admin page. Each link bolds on hover (admin.css);
