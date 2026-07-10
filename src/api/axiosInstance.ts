@@ -12,10 +12,13 @@ declare module 'axios' {
     export interface AxiosRequestConfig {
         _retry?: boolean;
         _skipAuthRefresh?: boolean;
+        _retryOnNetworkError?: boolean;
     }
     export interface InternalAxiosRequestConfig {
         _retry?: boolean;          // "we've already tried to refresh for this request"
         _skipAuthRefresh?: boolean; // "never attempt a refresh for this request" (e.g. logout)
+        _retryOnNetworkError?: boolean; // opt in to the no-response retry below (safe-to-repeat calls only)
+        _netRetryCount?: number;   // how many no-response retries we've already spent on this request
     }
 }
 
@@ -25,6 +28,13 @@ declare module 'axios' {
 // Cross-site (third-party) cookies are blocked by Safari/Chrome, which was the "logged out on
 // refresh" bug. Locally VITE_API_URL is set to http://localhost:5000, so behaviour is unchanged.
 const API_URL = import.meta.env.VITE_API_URL ?? '';
+
+// How many times to re-send a request that got NO response (the server reset the connection
+// under load), and how long to wait between tries. The deployed API runs bcrypt logins on a
+// tiny instance that intermittently drops heavy POSTs, so the same request usually succeeds on
+// a second try. Keep this small with a backoff: retries add load to an already-busy server.
+const MAX_NETWORK_RETRIES = 2;
+const NETWORK_RETRY_BASE_DELAY_MS = 500;
 
 // One configured Axios client the whole app shares.
 const axiosInstance = axios.create({
@@ -77,6 +87,21 @@ axiosInstance.interceptors.response.use(
     async (error: AxiosError) => {
         const original = error.config as InternalAxiosRequestConfig | undefined;
         const status = error.response?.status;
+
+        // NETWORK-ERROR RETRY: when there is NO response at all (error.response is undefined) the
+        // server never answered — e.g. it reset the connection while overloaded. That's transient
+        // and usually clears on a resend, so retry (with backoff) requests that opted in. We only
+        // do this when there is no response: a real 4xx/5xx IS an answer (e.g. 401 wrong password)
+        // and must never be retried. Opt-in only, because blindly resending POSTs isn't always safe.
+        if (original && original._retryOnNetworkError && !error.response) {
+            const attempts = original._netRetryCount ?? 0;
+            if (attempts < MAX_NETWORK_RETRIES) {
+                original._netRetryCount = attempts + 1;
+                const delay = NETWORK_RETRY_BASE_DELAY_MS * 2 ** attempts; // 500ms, then 1000ms
+                await new Promise((resolve) => setTimeout(resolve, delay));
+                return axiosInstance(original);
+            }
+        }
 
         // Only recover from a genuine 401, only once, and never for opted-out requests.
         if (status !== 401 || !original || original._retry || original._skipAuthRefresh) {

@@ -170,7 +170,11 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
                 ? await axiosInstance.post<AuthResponse>(
                     '/api/v1/auth/login',
                     { email, password },
-                    { _skipAuthRefresh: true },
+                    // _retryOnNetworkError: the deployed API intermittently resets heavy bcrypt
+                    // logins under load; a resend usually succeeds. Safe here because login is
+                    // idempotent (it just issues a token) — unlike register, which could 409 if a
+                    // lost-response first attempt had already created the account.
+                    { _skipAuthRefresh: true, _retryOnNetworkError: true },
                 )
                 : await axiosInstance.post<AuthResponse>(
                     '/api/v1/auth/register',

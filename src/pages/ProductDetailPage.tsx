@@ -4,7 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { Star, Check, Sparkles } from 'lucide-react';
-import Logo from '../components/Logo';
+import { PageHeader } from '../components/products/PageHeader';
 import { useProduct } from '../hooks/useProduct';
 import { useProductReviews } from '../hooks/useProductReviews';
 import { useAuth } from '../context/AuthContext';
@@ -49,7 +49,12 @@ export function ProductDetailPage() {
     // 4) The Add-to-Cart mutation. `isPending` drives the button spinner.
     const addToCart = useMutation({
         mutationFn: () => addCartItem(productId, 1),
-        onSuccess: () => toast.success('Added to cart!'),
+        onSuccess: () => {
+            toast.success('Added to cart!');
+            // The header's cart badge (useCartCount) reads this same ['cart'] query —
+            // without this it only updates on the next window-focus refetch or reload.
+            queryClient.invalidateQueries({ queryKey: ['cart'] });
+        },
         onError: () => toast.error('Could not add to cart. Please try again.'),
     });
 
@@ -399,12 +404,7 @@ export function ProductDetailPage() {
 function Shell({ children }: { children: ReactNode }) {
     return (
         <div style={{ minHeight: '100vh', background: '#f7f6fb', fontFamily: "'Plus Jakarta Sans',sans-serif", color: '#15131f', paddingBottom: 80 }}>
-            <header style={{ position: 'sticky', top: 0, zIndex: 20, background: 'rgba(247,246,251,.86)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderBottom: '1px solid #eceaf2' }}>
-                <div style={{ maxWidth: 1080, margin: '0 auto', padding: '13px 28px', display: 'flex', alignItems: 'center', gap: 11 }}>
-                    <Logo height={26} to="/" />
-                    <span style={{ fontSize: 13, color: '#9a97a8', fontWeight: 500 }}>/ Product</span>
-                </div>
-            </header>
+            <PageHeader crumbLabel="Product" />
             <main style={{ maxWidth: 1080, margin: '0 auto', padding: '32px 28px 0' }}>{children}</main>
         </div>
     );
