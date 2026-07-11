@@ -1,16 +1,17 @@
 // src/pages/seller/SellerProductsPage.tsx
-import { useState, useEffect } from 'react';
-import type { CSSProperties } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import type { CSSProperties, ChangeEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { useStores } from '../../hooks/useStores';
 import { useSellerProducts } from '../../hooks/useSellerData';
 import { useDebounce } from '../../hooks/useDebounce';
-import { useDeleteProduct } from '../../hooks/useProductMutations';
+import { useDeleteProduct, useImportProductsForStore } from '../../hooks/useProductMutations';
 import { Pagination } from '../../components/products/Pagination';
 import { formatCurrency, stockLevel, STOCK_LABEL } from '../../lib/format';
-import type { ProductResponse } from '../../types/product';
+import type { ProductResponse, ImportResult } from '../../types/product';
 import { ProductFormModal } from '../admin/ProductFormModal';
+import { ImportResultModal } from '../admin/ImportResultModal';
 import { SellerTabs } from '../../components/seller/SellerTabs';
 import { StorePicker } from '../../components/seller/StorePicker';
 import { StoreLockedBanner } from '../../components/seller/StoreLockedBanner';
@@ -40,6 +41,11 @@ export function SellerProductsPage() {
     const [sortDescending, setSortDescending] = useState(false);
     const [editing, setEditing] = useState<ProductResponse | 'new' | null>(null);
 
+    // Excel import: a hidden <input type="file"> we click programmatically, plus the result popup.
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [importResult, setImportResult] = useState<ImportResult | null>(null);
+    const [importResultOpen, setImportResultOpen] = useState(false);
+
     const queryClient = useQueryClient();
     function refreshList() {
         queryClient.invalidateQueries({ queryKey: ['seller-products'] });
@@ -60,6 +66,39 @@ export function SellerProductsPage() {
         onSuccess: () => { toast.success('Product deleted.'); refreshList(); },
         onError: (m) => toast.error(m),
     });
+
+    // A 200 means the import RAN — not that anything was added. Open the result modal and pick a
+    // toast that matches the real outcome, then refresh the list so new products appear.
+    function announceImport(result: ImportResult) {
+        setImportResult(result);
+        setImportResultOpen(true);
+        if (result.addedCount === 0) {
+            toast.error(`No products imported — ${result.failedCount} row(s) failed.`);
+        } else if (result.failedCount > 0) {
+            toast(`Imported ${result.addedCount} product(s), ${result.failedCount} failed.`);
+        } else {
+            toast.success(`Imported ${result.addedCount} product(s).`);
+        }
+        refreshList();
+    }
+
+    const importMut = useImportProductsForStore({
+        onSuccess: announceImport,
+        onError: (m) => toast.error(m),
+    });
+
+    function onPickFile(e: ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0];
+        e.target.value = ''; // reset so picking the SAME file again still fires onChange
+        if (!file) return;
+        // Guarded by the disabled button too, but never import without an approved, selected store.
+        if (selectedStoreId === null || !isApproved) return;
+        if (!file.name.toLowerCase().endsWith('.xlsx')) {
+            toast.error('Please choose an .xlsx file.');
+            return;
+        }
+        importMut.mutate({ storeId: selectedStoreId, file });
+    }
 
     function toggleSort(field: SortField) {
         if (sortBy === field) setSortDescending((d) => !d);
@@ -113,6 +152,16 @@ export function SellerProductsPage() {
                             >
                                 + Add Product
                             </button>
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={!isApproved || importMut.isPending}
+                                title={isApproved ? 'Bulk-import products into this store from an .xlsx file' : 'Available once this store is approved'}
+                                style={{ ...secondaryBtn, opacity: isApproved ? 1 : 0.45, cursor: !isApproved ? 'not-allowed' : importMut.isPending ? 'wait' : 'pointer' }}
+                            >
+                                {importMut.isPending ? 'Importing…' : 'Import Excel'}
+                            </button>
+                            {/* Hidden picker. accept= filters the OS dialog to .xlsx files. */}
+                            <input ref={fileInputRef} type="file" accept=".xlsx" onChange={onPickFile} style={{ display: 'none' }} />
                         </div>
 
                         {isLoading ? (
@@ -191,6 +240,10 @@ export function SellerProductsPage() {
                     onClose={() => { setEditing(null); refreshList(); }}
                 />
             )}
+
+            {importResultOpen && (
+                <ImportResultModal result={importResult} onClose={() => setImportResultOpen(false)} />
+            )}
         </main>
     );
 }
@@ -200,6 +253,7 @@ const th: CSSProperties = { padding: '12px 14px', fontWeight: 600, fontSize: 12.
 const td: CSSProperties = { padding: '10px 14px', verticalAlign: 'middle' };
 const inputStyle: CSSProperties = { boxSizing: 'border-box', padding: '11px 13px', fontSize: 14.5, fontFamily: 'inherit', color: '#fff', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 12, outline: 'none' };
 const primaryBtn: CSSProperties = { padding: '11px 18px', fontFamily: 'inherit', fontSize: 14.5, fontWeight: 600, color: '#fff', border: 'none', borderRadius: 12, background: 'linear-gradient(120deg,#8b5cf6,#6366f1)' };
+const secondaryBtn: CSSProperties = { padding: '11px 18px', fontFamily: 'inherit', fontSize: 14.5, fontWeight: 600, color: '#fff', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 12 };
 const smallBtn: CSSProperties = { padding: '6px 12px', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, color: '#fff', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 9, cursor: 'pointer' };
 function stockColor(q: number): string {
     const lvl = stockLevel(q);
