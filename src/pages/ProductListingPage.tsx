@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import type { SortOption } from '../types/product';
 import type { ProductQueryParams } from '../api/products';
 import { useProducts } from '../hooks/useProducts';
+import { useSemanticSearch } from '../hooks/useSemanticSearch';
 import { useCategories } from '../hooks/useCategories';
 import { useDebounce } from '../hooks/useDebounce';
 import { ProductCard } from '../components/products/ProductCard';
@@ -68,17 +69,35 @@ export function ProductListingPage() {
         setSearchParams(new URLSearchParams());
     }
 
+    // A search term switches the page to MEANING-BASED (semantic) search; an empty box
+    // is the normal paginated browse. We can't send `search` to the keyword endpoint AND
+    // rank by meaning, so the two are mutually exclusive.
+    const isSearching = searchInUrl.trim().length > 0;
+
     const { sortBy, sortDescending } = SORT_MAP[sortInUrl] ?? SORT_MAP.newest;
     const queryParams: ProductQueryParams = {
-        search: searchInUrl || undefined,
         categoryId: categoryInUrl ? Number(categoryInUrl) : undefined,
         minPrice: minPriceInUrl ? Number(minPriceInUrl) : undefined,
         maxPrice: maxPriceInUrl ? Number(maxPriceInUrl) : undefined,
         sortBy, sortDescending, page: pageInUrl, pageSize: PAGE_SIZE,
     };
 
-    const { data, isLoading, isError } = useProducts(queryParams);
+    // Keyword/browse path (disabled while searching) and semantic path (enabled while searching).
+    const browse = useProducts(queryParams, !isSearching);
+    const semantic = useSemanticSearch(searchInUrl, isSearching);
     const { data: categories } = useCategories();
+
+    // Semantic results are a flat ranked list with no server filters — apply category/price
+    // client-side so the toolbar keeps working. Ranking order is preserved (no re-sort).
+    const semanticItems = (semantic.data ?? [])
+        .map((h) => h.product)
+        .filter((p) => !categoryInUrl || p.categoryId === Number(categoryInUrl))
+        .filter((p) => !minPriceInUrl || p.price >= Number(minPriceInUrl))
+        .filter((p) => !maxPriceInUrl || p.price <= Number(maxPriceInUrl));
+
+    const items = isSearching ? semanticItems : (browse.data?.items ?? []);
+    const isLoading = isSearching ? semantic.isLoading : browse.isLoading;
+    const isError = isSearching ? semantic.isError : browse.isError;
 
     // ---- shared inline styles (violet primary, per the theme decision) ----
     const chipBase: CSSProperties = { fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 13.5, fontWeight: 600, padding: '9px 16px', borderRadius: 999, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all .2s ease' };
@@ -86,10 +105,13 @@ export function ProductListingPage() {
     const idleChip: CSSProperties = { ...chipBase, background: '#fff', color: '#56536a', border: '1px solid #eceaf2' };
     const inputStyle: CSSProperties = { fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 13.5, color: '#15131f', padding: '9px 12px', border: '1px solid #eceaf2', borderRadius: 10, background: '#fff', outline: 'none' };
 
-    const total = data?.totalCount ?? 0;
+    // Browse shows the server total ("… of 240"); search shows how many ranked hits came back.
+    const total = isSearching ? items.length : (browse.data?.totalCount ?? 0);
     const countLabel = isLoading ? 'Loading products…'
         : total === 0 ? 'No products found'
-            : `Showing ${data!.items.length} of ${total} ${total === 1 ? 'product' : 'products'}`;
+            : isSearching
+                ? `${items.length} ${items.length === 1 ? 'result' : 'results'} for “${searchInUrl}”`
+                : `Showing ${items.length} of ${total} ${total === 1 ? 'product' : 'products'}`;
 
     return (
         <div style={{ minHeight: '100vh', width: '100%', background: '#f7f6fb', fontFamily: "'Plus Jakarta Sans',sans-serif", color: '#15131f', paddingBottom: 80 }}>
@@ -130,7 +152,7 @@ export function ProductListingPage() {
                     <div style={{ textAlign: 'center', padding: 64, color: '#c0392b' }}>Something went wrong loading products. Please try again.</div>
                 ) : isLoading ? (
                     <div style={gridStyle}>{Array.from({ length: PAGE_SIZE }).map((_, i) => <SkeletonCard key={i} />)}</div>
-                    ) : !data || data.items.length === 0 ? (
+                    ) : items.length === 0 ? (
                         <EmptyState
                             icon={SearchX}
                             title="No products found"
@@ -140,8 +162,11 @@ export function ProductListingPage() {
                         />
                     ) : (
                     <>
-                        <div style={gridStyle}>{data.items.map((p) => <ProductCard key={p.id} product={p} />)}</div>
-                        <Pagination page={data.page} totalPages={data.totalPages} hasPrevious={data.hasPrevious} hasNext={data.hasNext} onPageChange={(n) => setParam('page', String(n))} />
+                        <div style={gridStyle}>{items.map((p) => <ProductCard key={p.id} product={p} />)}</div>
+                        {/* Semantic results are a single ranked page — pagination only applies to browse. */}
+                        {!isSearching && browse.data && (
+                            <Pagination page={browse.data.page} totalPages={browse.data.totalPages} hasPrevious={browse.data.hasPrevious} hasNext={browse.data.hasNext} onPageChange={(n) => setParam('page', String(n))} />
+                        )}
                     </>
                 )}
             </div>
