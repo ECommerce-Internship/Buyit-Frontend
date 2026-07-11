@@ -129,8 +129,12 @@ export function OrderConfirmationPage() {
                                             key={item.storeOrderItemId}
                                             className="flex items-center gap-4 rounded-xl bg-white p-2"
                                         >
-                                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-[#f0edf7] bg-[#faf9fc]">
-                                                <ShoppingBag className="h-5 w-5 text-gray-300" />
+                                            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#f0edf7] bg-[#faf9fc]">
+                                                {item.imageUrl ? (
+                                                    <img src={item.imageUrl} alt={item.productName} className="h-full w-full object-cover" />
+                                                ) : (
+                                                    <ShoppingBag className="h-5 w-5 text-gray-300" />
+                                                )}
                                             </div>
                                             <div className="min-w-0 flex-1">
                                                 <p className="truncate font-semibold text-gray-900">{item.productName}</p>
