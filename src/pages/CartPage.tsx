@@ -158,7 +158,7 @@ function QuantityBumpIndicator({ quantity }: { quantity: number }) {
                     animate={{ opacity: 1, y: -20, scale: 1 }}
                     exit={{ opacity: 0, y: -30 }}
                     transition={{ duration: 0.5, ease: 'easeOut' }}
-                    className={`pointer-events-none absolute -top-1 left-1/2 z-10 -translate-x-1/2 text-xs font-bold ${bump.direction === 1 ? 'text-green-500' : 'text-[#ff416c]'
+                    className={`pointer-events-none absolute -top-1 left-1/2 z-10 -translate-x-1/2 text-xs font-bold ${bump.direction === 1 ? 'text-green-500' : 'text-[#7c5cff]'
                         }`}
                 >
                     {bump.direction === 1 ? '+1' : '-1'}
@@ -184,15 +184,15 @@ function CartSteps() {
                             <div className="flex items-center gap-1 sm:gap-2">
                                 <span
                                     className={`h-2 w-2 shrink-0 rounded-full transition-all duration-500 ${isActive
-                                        ? 'scale-100 bg-[#ff5f6d] shadow-[0_0_0_4px_rgba(255,95,109,0.18)] animate-pulse'
+                                        ? 'scale-100 bg-[#7c5cff] shadow-[0_0_0_4px_rgba(124,92,255,0.18)] animate-pulse'
                                         : isDone
-                                            ? 'scale-100 bg-[#ff7a45]'
+                                            ? 'scale-100 bg-[#8d6cff]'
                                             : 'scale-75 bg-gray-300'
                                         }`}
                                 />
                                 <span
                                     className={`text-sm sm:text-lg font-semibold whitespace-nowrap transition-colors duration-500 ${isActive
-                                        ? 'bg-gradient-to-r from-[#ff7a45] to-[#ff416c] bg-clip-text text-transparent'
+                                        ? 'bg-gradient-to-r from-[#8d6cff] to-[#7c5cff] bg-clip-text text-transparent'
                                         : 'text-gray-400'
                                         }`}
                                 >
@@ -202,7 +202,7 @@ function CartSteps() {
                             {i < steps.length - 1 && (
                                 <div className="relative h-px w-6 sm:w-20 shrink-0 overflow-hidden border-t-2 border-dashed border-[#d7d1e8]">
                                     <div
-                                        className={`absolute inset-y-0 left-0 border-t-2 border-dashed border-[#ff7a45] transition-all duration-700 ease-out ${i < activeIndex ? 'w-full' : 'w-0'
+                                        className={`absolute inset-y-0 left-0 border-t-2 border-dashed border-[#8d6cff] transition-all duration-700 ease-out ${i < activeIndex ? 'w-full' : 'w-0'
                                             }`}
                                     />
                                 </div>
@@ -226,14 +226,14 @@ function fireCouponConfetti() {
         particleCount: 60,
         angle: 60,
         origin: { x: 0, y: 0.1 },
-        colors: ['#ff7a45', '#ff416c', '#9b5cff'],
+        colors: ['#8d6cff', '#7c5cff', '#6d28d9'],
     });
     confetti({
         ...defaults,
         particleCount: 60,
         angle: 120,
         origin: { x: 1, y: 0.1 },
-        colors: ['#ff7a45', '#ff416c', '#9b5cff'],
+        colors: ['#8d6cff', '#7c5cff', '#6d28d9'],
     });
     confetti({
         ...defaults,
@@ -242,7 +242,7 @@ function fireCouponConfetti() {
         angle: 90,
         startVelocity: 28,
         origin: { x: 0.5, y: 0.3 },
-        colors: ['#ff7a45', '#ff416c', '#9b5cff'],
+        colors: ['#8d6cff', '#7c5cff', '#6d28d9'],
     });
 }
 /* ---------------------------------------------------------------------- */
@@ -250,26 +250,26 @@ function fireCouponConfetti() {
 /* ---------------------------------------------------------------------- */
 function AnimatedCartIcon() {
     return (
-        <div className="group relative mb-1 flex h-11 w-11 cursor-pointer items-center justify-center overflow-visible rounded-full bg-white text-[#ff5f6d] shadow-sm ring-1 ring-[#ffd6cc] transition duration-300 ease-out hover:scale-105 hover:shadow-[0_12px_25px_rgba(255,95,109,0.18)]">
+        <div className="group relative mb-1 flex h-11 w-11 cursor-pointer items-center justify-center overflow-visible rounded-full bg-white text-[#7c5cff] shadow-sm ring-1 ring-[#e3d9ff] transition duration-300 ease-out hover:scale-105 hover:shadow-[0_12px_25px_rgba(124,92,255,0.18)]">
             <span
-                className="pointer-events-none absolute left-[21px] top-[-18px] h-1.5 w-2 rounded-[1.5px] bg-[#ff7a45] opacity-0
+                className="pointer-events-none absolute left-[21px] top-[-18px] h-1.5 w-2 rounded-[1.5px] bg-[#8d6cff] opacity-0
                transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
                group-hover:top-[11px] group-hover:rotate-3 group-hover:opacity-100"
             />
             <span
-                className="pointer-events-none absolute left-[21px] top-[-18px] h-2 w-2 rounded-[1.5px] bg-[#9b5cff] opacity-0
+                className="pointer-events-none absolute left-[21px] top-[-18px] h-2 w-2 rounded-[1.5px] bg-[#7c5cff] opacity-0
                transition-all delay-100 duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
                group-hover:top-[17px] group-hover:-rotate-6 group-hover:opacity-100"
             />
             <span
-                className="pointer-events-none absolute left-[21px] top-[-18px] h-1.5 w-2 rounded-[1.5px] bg-[#ff416c] opacity-0
+                className="pointer-events-none absolute left-[21px] top-[-18px] h-1.5 w-2 rounded-[1.5px] bg-[#6d28d9] opacity-0
                transition-all delay-200 duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
                group-hover:top-[5px] group-hover:-rotate-3 group-hover:opacity-100"
             />
             <span
-                className="pointer-events-none absolute inset-0 rounded-full bg-[#ff7a45]/0
+                className="pointer-events-none absolute inset-0 rounded-full bg-[#8d6cff]/0
                            transition-all delay-300 duration-300 ease-out
-                           group-hover:bg-[#ff7a45]/10 group-hover:scale-110"
+                           group-hover:bg-[#8d6cff]/10 group-hover:scale-110"
             />
             <ShoppingCart className="h-5 w-5 transition duration-300 ease-out group-hover:-rotate-6 group-hover:scale-110" />
         </div>
@@ -298,7 +298,7 @@ function CartHeaderIcon({ itemCount }: { itemCount: number }) {
                         initial={{ opacity: 0, scale: 0.5 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.5 }}
-                        className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-gradient-to-r from-[#ff7a45] to-[#ff416c] px-1 text-[11px] font-bold text-white shadow-[0_4px_10px_rgba(255,65,108,0.35)]"
+                        className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-gradient-to-r from-[#8d6cff] to-[#7c5cff] px-1 text-[11px] font-bold text-white shadow-[0_4px_10px_rgba(124,92,255,0.35)]"
                     >
                         <motion.span
                             key={bumpKey}
@@ -456,7 +456,7 @@ export function CartPage() {
     const isEmpty = !cart || cart.items.length === 0;
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-[linear-gradient(180deg,#f7f6fb_0%,#fff7f2_100%)]">
+            <div className="min-h-screen bg-[linear-gradient(180deg,#f7f6fb_0%,#f5f2ff_100%)]">
                 <div className="px-4 py-10">
                     <div className="mx-auto max-w-7xl animate-pulse">
                         <div className="mb-10 flex justify-center">
@@ -492,7 +492,7 @@ export function CartPage() {
     }
     if (isError) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-[linear-gradient(180deg,#f7f6fb_0%,#fff7f2_100%)] px-4">
+            <div className="min-h-screen flex items-center justify-center bg-[linear-gradient(180deg,#f7f6fb_0%,#f5f2ff_100%)] px-4">
                 <div className="rounded-2xl bg-white p-8 text-center shadow-sm border border-[#efe8f6]">
                     <p className="text-lg font-semibold text-gray-900">Failed to load cart.</p>
                     <p className="mt-2 text-sm text-gray-500">
@@ -504,7 +504,7 @@ export function CartPage() {
     }
     if (isEmpty) {
         return (
-            <div className="min-h-screen bg-[linear-gradient(180deg,#f7f6fb_0%,#fff7f2_100%)] flex items-center justify-center px-4 py-10">
+            <div className="min-h-screen bg-[linear-gradient(180deg,#f7f6fb_0%,#f5f2ff_100%)] flex items-center justify-center px-4 py-10">
                 <div className="w-full max-w-md">
                     <EmptyState
                         icon={ShoppingCart}
@@ -519,7 +519,7 @@ export function CartPage() {
     }
     if (isError) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-[linear-gradient(180deg,#f7f6fb_0%,#fff7f2_100%)] px-4">
+            <div className="min-h-screen flex items-center justify-center bg-[linear-gradient(180deg,#f7f6fb_0%,#f5f2ff_100%)] px-4">
                 <div className="rounded-2xl bg-white p-8 text-center shadow-sm border border-[#efe8f6]">
                     <p className="text-lg font-semibold text-gray-900">Failed to load cart.</p>
                     <p className="mt-2 text-sm text-gray-500">
@@ -531,7 +531,7 @@ export function CartPage() {
     }
     if (isEmpty) {
         return (
-            <div className="min-h-screen bg-[linear-gradient(180deg,#f7f6fb_0%,#fff7f2_100%)] flex items-center justify-center px-4">
+            <div className="min-h-screen bg-[linear-gradient(180deg,#f7f6fb_0%,#f5f2ff_100%)] flex items-center justify-center px-4">
                 <motion.div
                     initial="hidden"
                     animate="visible"
@@ -551,9 +551,9 @@ export function CartPage() {
                         <motion.div
                             animate={{ y: [0, -10, 0] }}
                             transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
-                            className="flex h-28 w-28 items-center justify-center rounded-full bg-[#fff1ea]"
+                            className="flex h-28 w-28 items-center justify-center rounded-full bg-[#efeaff]"
                         >
-                            <ShoppingCart className="h-14 w-14 text-[#ff5f6d]" strokeWidth={1.5} />
+                            <ShoppingCart className="h-14 w-14 text-[#7c5cff]" strokeWidth={1.5} />
                         </motion.div>
                     </motion.div>
                     <motion.h1
@@ -571,7 +571,7 @@ export function CartPage() {
                     <motion.div variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}>
                         <Link
                             to="/products"
-                            className="mt-8 inline-flex cursor-pointer items-center justify-center rounded-xl bg-gradient-to-r from-[#ff7a45] to-[#ff416c] px-6 py-3 font-semibold text-white shadow-[0_16px_35px_rgba(255,95,109,0.28)] transition duration-300 ease-out hover:scale-[1.01]"
+                            className="mt-8 inline-flex cursor-pointer items-center justify-center rounded-xl bg-gradient-to-r from-[#8d6cff] to-[#7c5cff] px-6 py-3 font-semibold text-white shadow-[0_16px_35px_rgba(124,92,255,0.28)] transition duration-300 ease-out hover:scale-[1.01]"
                         >
                             Shop Now
                         </Link>
@@ -582,17 +582,17 @@ export function CartPage() {
     }
     const totalItemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
     return (
-        <div className="min-h-screen bg-[linear-gradient(180deg,#f7f6fb_0%,#fff7f2_100%)]">
+        <div className="min-h-screen bg-[linear-gradient(180deg,#f7f6fb_0%,#f5f2ff_100%)]">
             <div className="px-4 py-10">
                 <div className="mx-auto max-w-7xl">
                     <CartSteps />
                     <div className="mb-8">
                         <div className="mb-3 flex items-center gap-2 text-sm font-medium text-gray-500">
-                            <Link to="/" className="transition hover:text-[#ff5f6d]">
+                            <Link to="/" className="transition hover:text-[#7c5cff]">
                                 Home
                             </Link>
                             <ChevronRight className="h-4 w-4 text-gray-400" />
-                            <span className="font-semibold text-[#ff5f6d]">Shopping Cart</span>
+                            <span className="font-semibold text-[#7c5cff]">Shopping Cart</span>
                         </div>
                         <div className="flex items-end justify-between gap-4 border-b border-[#d7d1e8] pb-2">
                             <div>
@@ -628,7 +628,7 @@ export function CartPage() {
                             {storeGroups.map((group) => (
                                 <div key={group.storeId}>
                                     <div className="flex items-center gap-2 border-b border-[#f0edf7] bg-[#faf9fc] px-6 py-3">
-                                        <Store className="h-4 w-4 text-[#ff5f6d]" />
+                                        <Store className="h-4 w-4 text-[#7c5cff]" />
                                         <span className="text-sm font-bold text-gray-700">{group.storeName}</span>
                                         <span className="text-xs text-gray-400">
                                             ({group.items.length} {group.items.length === 1 ? 'item' : 'items'})
@@ -706,7 +706,7 @@ export function CartPage() {
                                                                     handleMinus(item.productId, item.quantity)
                                                                 }
                                                                 disabled={isPending}
-                                                                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-[#e7e1f2] text-gray-600 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#ffb199] hover:bg-[#fff7f2] hover:text-[#ff5f6d] hover:shadow-[0_8px_18px_rgba(255,95,109,0.14)] disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-50 disabled:shadow-none"
+                                                                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-[#e7e1f2] text-gray-600 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#c9b8ff] hover:bg-[#f5f2ff] hover:text-[#7c5cff] hover:shadow-[0_8px_18px_rgba(124,92,255,0.14)] disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-50 disabled:shadow-none"
                                                                 aria-label="Decrease quantity"
                                                             >
                                                                 <Minus className="h-4 w-4" />
@@ -726,13 +726,13 @@ export function CartPage() {
                                                                     handlePlus(item.productId, item.quantity)
                                                                 }
                                                                 disabled={isPending}
-                                                                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-[#e7e1f2] text-gray-600 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#ffb199] hover:bg-[#fff7f2] hover:text-[#ff5f6d] hover:shadow-[0_8px_18px_rgba(255,95,109,0.14)] disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-50 disabled:shadow-none"
+                                                                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-[#e7e1f2] text-gray-600 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#c9b8ff] hover:bg-[#f5f2ff] hover:text-[#7c5cff] hover:shadow-[0_8px_18px_rgba(124,92,255,0.14)] disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-50 disabled:shadow-none"
                                                                 aria-label="Increase quantity"
                                                             >
                                                                 <Plus className="h-4 w-4" />
                                                             </motion.button>
                                                             {isPending && (
-                                                                <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#ff5f6d]" />
+                                                                <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#7c5cff]" />
                                                             )}
                                                         </div>
                                                         <div className="md:text-right">
@@ -751,7 +751,7 @@ export function CartPage() {
                                                                 removeItemMutation.mutate(item.productId);
                                                             }}
                                                             disabled={isPending}
-                                                            className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-[#f0dce2] text-gray-400 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#ffb3c1] hover:bg-[#fff1f4] hover:text-[#ff416c] hover:shadow-[0_10px_22px_rgba(255,65,108,0.14)] disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-50 disabled:shadow-none"
+                                                            className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-[#efe8f6] text-gray-400 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#d9ccff] hover:bg-[#f5f2ff] hover:text-[#7c5cff] hover:shadow-[0_10px_22px_rgba(124,92,255,0.14)] disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-50 disabled:shadow-none"
                                                             aria-label="Remove item"
                                                             title="Remove item"
                                                         >
@@ -777,7 +777,7 @@ export function CartPage() {
                         >
                             <div className="rounded-2xl border border-[#efe8f6] bg-white p-5 shadow-sm">
                                 <div className="mb-4 flex items-center gap-2">
-                                    <Tag className="h-5 w-5 text-[#ff5f6d]" />
+                                    <Tag className="h-5 w-5 text-[#7c5cff]" />
                                     <h2 className="font-semibold text-gray-900">Coupon</h2>
                                 </div>
                                 {cart.couponCode ? (
@@ -846,7 +846,7 @@ export function CartPage() {
                                             type="button"
                                             onClick={() => removeCouponMutation.mutate()}
                                             disabled={removeCouponMutation.isPending}
-                                            className="inline-flex cursor-pointer items-center justify-center gap-2 text-sm font-medium text-gray-500 transition duration-300 ease-out hover:text-[#ff416c] disabled:cursor-not-allowed disabled:opacity-50"
+                                            className="inline-flex cursor-pointer items-center justify-center gap-2 text-sm font-medium text-gray-500 transition duration-300 ease-out hover:text-[#7c5cff] disabled:cursor-not-allowed disabled:opacity-50"
                                         >
                                             {removeCouponMutation.isPending ? (
                                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -866,7 +866,7 @@ export function CartPage() {
                                                 if (e.key === 'Enter') handleApplyCoupon();
                                             }}
                                             placeholder="Enter coupon code"
-                                            className="w-full rounded-xl border border-[#e7e1f2] px-4 py-3 text-sm outline-none focus:border-[#ff7a45] focus:ring-2 focus:ring-[#ffe1d6]"
+                                            className="w-full rounded-xl border border-[#e7e1f2] px-4 py-3 text-sm outline-none focus:border-[#8d6cff] focus:ring-2 focus:ring-[#e3d9ff]"
                                         />
                                         <motion.button
                                             whileTap={{ scale: 0.97 }}
@@ -875,7 +875,7 @@ export function CartPage() {
                                             disabled={
                                                 applyCouponMutation.isPending || !couponInput.trim()
                                             }
-                                            className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ff7a45] to-[#ff416c] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(255,95,109,0.22)] transition duration-300 ease-out hover:scale-[1.01] hover:shadow-[0_18px_35px_rgba(255,95,109,0.28)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+                                            className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#8d6cff] to-[#7c5cff] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(124,92,255,0.22)] transition duration-300 ease-out hover:scale-[1.01] hover:shadow-[0_18px_35px_rgba(124,92,255,0.28)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
                                         >
                                             {applyCouponMutation.isPending && (
                                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -924,14 +924,14 @@ export function CartPage() {
                                     type="button"
                                     onClick={() => navigate('/checkout')}
                                     disabled={isEmpty}
-                                    className="mt-6 w-full cursor-pointer rounded-xl bg-gradient-to-r from-[#ff7a45] to-[#ff416c] py-3 font-semibold text-white shadow-[0_16px_35px_rgba(255,95,109,0.28)] transition duration-300 ease-out hover:scale-[1.01] hover:shadow-[0_20px_42px_rgba(255,95,109,0.34)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+                                    className="mt-6 w-full cursor-pointer rounded-xl bg-gradient-to-r from-[#8d6cff] to-[#7c5cff] py-3 font-semibold text-white shadow-[0_16px_35px_rgba(124,92,255,0.28)] transition duration-300 ease-out hover:scale-[1.01] hover:shadow-[0_20px_42px_rgba(124,92,255,0.34)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
                                 >
                                     Proceed to Checkout
                                 </motion.button>
                                 <div className="mt-4">
                                     <Link
                                         to="/products"
-                                        className="inline-flex w-full items-center justify-center gap-2 text-sm font-semibold text-gray-500 transition duration-300 ease-out hover:text-[#ff5f6d]"
+                                        className="inline-flex w-full items-center justify-center gap-2 text-sm font-semibold text-gray-500 transition duration-300 ease-out hover:text-[#7c5cff]"
                                     >
                                         <ArrowLeft className="h-4 w-4" />
                                         Continue shopping
@@ -941,7 +941,7 @@ export function CartPage() {
                                             We accept
                                         </p>
                                         <div className="flex justify-center">
-                                            <div className="flex items-center gap-2 rounded-full border border-[#f0edf7] bg-[#faf9fc] px-4 py-2 shadow-sm transition duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_8px_18px_rgba(255,95,109,0.10)]">
+                                            <div className="flex items-center gap-2 rounded-full border border-[#f0edf7] bg-[#faf9fc] px-4 py-2 shadow-sm transition duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_8px_18px_rgba(124,92,255,0.10)]">
                                                 <img
                                                     src="/payment-methods/wish-money.png"
                                                     alt="Wish Money"
