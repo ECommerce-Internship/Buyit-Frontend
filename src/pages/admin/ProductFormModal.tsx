@@ -37,6 +37,12 @@ export function ProductFormModal({ product, stores, onClose }: Props) {
     // The image file the admin staged but hasn't uploaded yet (create mode uploads AFTER save).
     const [pendingFile, setPendingFile] = useState<File | null>(null);
 
+    // The product's current image URL. Seeded from the product, then refreshed when an upload
+    // succeeds (see uploadImg below). The edit-save payload MUST carry this: the backend's
+    // UpdateProductRequest overwrites ImageUrl unconditionally, so omitting it nulls out the
+    // image we just uploaded (that was the "uploaded image disappears on Save" bug).
+    const [imageUrl, setImageUrl] = useState<string | null>(product?.imageUrl ?? null);
+
     // --- Generate Content (AI) state ---
     const [specs, setSpecs] = useState('');
     const [suggestion, setSuggestion] = useState<ProductContentSuggestion | null>(null);
@@ -53,6 +59,7 @@ export function ProductFormModal({ product, stores, onClose }: Props) {
 
     // --- mutations ---
     const uploadImg = useUploadProductImage({
+        onSuccess: (url) => setImageUrl(url),   // keep the new URL so Save doesn't wipe it
         onError: (m) => toast.error(`Saved, but image upload failed: ${m}`),
     });
 
@@ -139,6 +146,7 @@ export function ProductFormModal({ product, stores, onClose }: Props) {
                     seoTitle: seoTitle.trim() || null,
                     metaDescription: metaDescription.trim() || null,
                     features: cleanFeatures.length ? cleanFeatures : null,
+                    imageUrl,   // preserve the current/just-uploaded image; omitting it nulls it server-side
                 },
             });
         } else {
