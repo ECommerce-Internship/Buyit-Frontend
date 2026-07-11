@@ -11,17 +11,13 @@ import {
     ShoppingBag,
     ShoppingCart,
 } from 'lucide-react';
-
 import { fetchMyOrders } from '../api/orders';
 import { Skeleton } from '../components/ui/Skeleton';
 import { EmptyState } from '../components/ui/EmptyState';
-
 const PAGE_SIZE = 10;
-
 /* ---------------------------------------------------------------------- */
 /* Animation variants                                                      */
 /* ---------------------------------------------------------------------- */
-
 const tableVariants = {
     hidden: {},
     visible: {
@@ -30,7 +26,6 @@ const tableVariants = {
         },
     },
 };
-
 const rowVariants = {
     hidden: { opacity: 0, y: 16 },
     visible: {
@@ -44,7 +39,6 @@ const rowVariants = {
         transition: { duration: 0.2, ease: 'easeIn' as const },
     },
 };
-
 const badgeVariants = {
     hidden: { opacity: 0, scale: 0.8 },
     visible: {
@@ -53,11 +47,9 @@ const badgeVariants = {
         transition: { type: 'spring' as const, stiffness: 400, damping: 20 },
     },
 };
-
 /* ---------------------------------------------------------------------- */
 /* Animated money counter                                                  */
 /* ---------------------------------------------------------------------- */
-
 function AnimatedMoney({
     value,
     delay = 0,
@@ -67,10 +59,8 @@ function AnimatedMoney({
 }) {
     const [displayValue, setDisplayValue] = useState(0);
     const currentValueRef = useRef(0);
-
     useEffect(() => {
         currentValueRef.current = 0;
-
         const controls = animate(0, value, {
             duration: 0.85,
             delay,
@@ -84,10 +74,8 @@ function AnimatedMoney({
                 setDisplayValue(value);
             },
         });
-
         return () => controls.stop();
     }, [value, delay]);
-
     return (
         <motion.span
             className="inline-block tabular-nums font-bold text-gray-900"
@@ -99,20 +87,16 @@ function AnimatedMoney({
         </motion.span>
     );
 }
-
 /* ---------------------------------------------------------------------- */
 /* MyOrdersPage                                                            */
 /* ---------------------------------------------------------------------- */
-
 export function MyOrdersPage() {
     const [page, setPage] = useState(1);
-
     const { data, isLoading, isError } = useQuery({
         queryKey: ['my-orders', page, PAGE_SIZE],
         queryFn: () => fetchMyOrders(page, PAGE_SIZE),
         refetchOnWindowFocus: true,
     });
-
     function formatDate(value: string) {
         return new Intl.DateTimeFormat('en-US', {
             month: 'short',
@@ -122,10 +106,9 @@ export function MyOrdersPage() {
             minute: '2-digit',
         }).format(new Date(value));
     }
-
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-[linear-gradient(180deg,#f7f6fb_0%,#fff7f2_100%)] px-4 py-10">
+            <div className="min-h-screen bg-[linear-gradient(180deg,#f7f6fb_0%,#f5f2ff_100%)] px-4 py-10">
                 <div className="mx-auto max-w-7xl">
                     <div className="mb-8 border-b border-[#d7d1e8] pb-5">
                         <Skeleton className="h-4 w-40" />
@@ -153,10 +136,9 @@ export function MyOrdersPage() {
             </div>
         );
     }
-
     if (isError) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-[linear-gradient(180deg,#f7f6fb_0%,#fff7f2_100%)] px-4">
+            <div className="min-h-screen flex items-center justify-center bg-[linear-gradient(180deg,#f7f6fb_0%,#f5f2ff_100%)] px-4">
                 <div className="rounded-2xl border border-[#efe8f6] bg-white p-8 text-center shadow-sm">
                     <p className="text-lg font-semibold text-gray-900">
                         Failed to load your orders.
@@ -168,10 +150,9 @@ export function MyOrdersPage() {
             </div>
         );
     }
-
     if (!data || data.items.length === 0) {
         return (
-            <div className="min-h-screen bg-[linear-gradient(180deg,#f7f6fb_0%,#fff7f2_100%)] px-4 py-10">
+            <div className="min-h-screen bg-[linear-gradient(180deg,#f7f6fb_0%,#f5f2ff_100%)] px-4 py-10">
                 <div className="mx-auto max-w-5xl">
                     <EmptyState
                         icon={ShoppingCart}
@@ -184,9 +165,8 @@ export function MyOrdersPage() {
             </div>
         );
     }
-
     return (
-        <div className="min-h-screen bg-[linear-gradient(180deg,#f7f6fb_0%,#fff7f2_100%)] px-4 py-10">
+        <div className="min-h-screen bg-[linear-gradient(180deg,#f7f6fb_0%,#f5f2ff_100%)] px-4 py-10">
             <div className="mx-auto max-w-7xl">
                 <motion.div
                     initial={{ opacity: 0, y: -16 }}
@@ -195,30 +175,26 @@ export function MyOrdersPage() {
                     className="mb-8 flex flex-col justify-between gap-4 border-b border-[#d7d1e8] pb-5 md:flex-row md:items-end"
                 >
                     <div>
-                        <div className="inline-flex items-center gap-2 rounded-full border border-[#ffe1d6] bg-white px-4 py-2 text-sm font-semibold text-[#ff5f6d] shadow-sm">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-[#e3d9ff] bg-white px-4 py-2 text-sm font-semibold text-[#7c5cff] shadow-sm">
                             <PackageCheck className="h-4 w-4" />
                             Order history
                         </div>
-
                         <h1 className="mt-4 text-3xl font-bold text-gray-900">
                             My Orders
                         </h1>
-
                         <p className="mt-2 text-gray-500">
                             Track your purchases, payment status, and order details.
                         </p>
                     </div>
-
                     <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                         <Link
                             to="/products"
-                            className="inline-flex items-center justify-center rounded-xl border border-[#e7e1f2] bg-white px-5 py-3 font-semibold text-gray-600 shadow-sm transition hover:border-[#ffccb9] hover:bg-[#fff7f2] hover:text-[#ff5f6d]"
+                            className="inline-flex items-center justify-center rounded-xl border border-[#e7e1f2] bg-white px-5 py-3 font-semibold text-gray-600 shadow-sm transition hover:border-[#d9ccff] hover:bg-[#f5f2ff] hover:text-[#7c5cff]"
                         >
                             Continue Shopping
                         </Link>
                     </motion.div>
                 </motion.div>
-
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -227,10 +203,9 @@ export function MyOrdersPage() {
                 >
                     <div className="flex items-center justify-between border-b border-[#f0edf7] px-6 py-5">
                         <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#fff1ea] text-[#ff5f6d]">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#efeaff] text-[#7c5cff]">
                                 <ReceiptText className="h-5 w-5" />
                             </div>
-
                             <div>
                                 <h2 className="text-lg font-bold text-gray-900">
                                     Recent Orders
@@ -242,7 +217,6 @@ export function MyOrdersPage() {
                             </div>
                         </div>
                     </div>
-
                     <div className="overflow-x-auto">
                         <table className="min-w-full text-left">
                             <thead className="bg-[#faf9fc] text-xs uppercase tracking-wide text-gray-400">
@@ -256,7 +230,6 @@ export function MyOrdersPage() {
                                     <th className="px-6 py-4 text-right font-bold">Action</th>
                                 </tr>
                             </thead>
-
                             <AnimatePresence mode="wait">
                                 <motion.tbody
                                     key={page}
@@ -270,7 +243,7 @@ export function MyOrdersPage() {
                                         <motion.tr
                                             key={order.orderId}
                                             variants={rowVariants}
-                                            className="transition hover:bg-[#fffaf7]"
+                                            className="transition hover:bg-[#f8f6ff]"
                                         >
                                             <td className="px-6 py-5">
                                                 <div className="font-bold text-gray-900">
@@ -283,29 +256,24 @@ export function MyOrdersPage() {
                                                         : 'stores'}
                                                 </div>
                                             </td>
-
                                             <td className="px-6 py-5">
                                                 <div className="flex items-center gap-2 text-sm text-gray-600">
                                                     <Clock className="h-4 w-4 text-gray-300" />
                                                     {formatDate(order.orderDate)}
                                                 </div>
                                             </td>
-
                                             <td className="px-6 py-5">
                                                 <StatusBadge status={order.status} />
                                             </td>
-
                                             <td className="px-6 py-5">
                                                 <PaymentBadge status={order.paymentStatus} />
                                             </td>
-
                                             <td className="px-6 py-5">
                                                 <div className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700">
                                                     <ShoppingBag className="h-4 w-4 text-gray-300" />
                                                     {order.itemCount}
                                                 </div>
                                             </td>
-
                                             <td className="px-6 py-5">
                                                 <AnimatedMoney
                                                     key={`${page}-${order.orderId}-${order.totalAmount}`}
@@ -313,7 +281,6 @@ export function MyOrdersPage() {
                                                     delay={0.16 + index * 0.06}
                                                 />
                                             </td>
-
                                             <td className="px-6 py-5 text-right">
                                                 <motion.div
                                                     whileHover={{ scale: 1.05 }}
@@ -322,7 +289,7 @@ export function MyOrdersPage() {
                                                 >
                                                     <Link
                                                         to={`/orders/${order.orderId}`}
-                                                        className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#ff7a45] to-[#ff416c] px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(255,95,109,0.22)] transition"
+                                                        className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#8d6cff] to-[#7c5cff] px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(124,92,255,0.22)] transition"
                                                     >
                                                         View
                                                     </Link>
@@ -334,7 +301,6 @@ export function MyOrdersPage() {
                             </AnimatePresence>
                         </table>
                     </div>
-
                     <div className="flex flex-col items-center justify-between gap-4 border-t border-[#f0edf7] px-6 py-5 sm:flex-row">
                         <p className="text-sm text-gray-500">
                             Page{' '}
@@ -346,7 +312,6 @@ export function MyOrdersPage() {
                                 {data.totalPages}
                             </span>
                         </p>
-
                         <div className="flex items-center gap-3">
                             <motion.button
                                 type="button"
@@ -354,19 +319,18 @@ export function MyOrdersPage() {
                                 onClick={() => setPage((prev) => Math.max(1, prev - 1))}
                                 whileHover={data.hasPrevious ? { scale: 1.03 } : {}}
                                 whileTap={data.hasPrevious ? { scale: 0.97 } : {}}
-                                className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[#e7e1f2] bg-white px-4 py-2 text-sm font-semibold text-gray-600 transition hover:border-[#ffccb9] hover:bg-[#fff7f2] hover:text-[#ff5f6d] disabled:cursor-not-allowed disabled:opacity-50"
+                                className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[#e7e1f2] bg-white px-4 py-2 text-sm font-semibold text-gray-600 transition hover:border-[#d9ccff] hover:bg-[#f5f2ff] hover:text-[#7c5cff] disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 <ChevronLeft className="h-4 w-4" />
                                 Previous
                             </motion.button>
-
                             <motion.button
                                 type="button"
                                 disabled={!data.hasNext}
                                 onClick={() => setPage((prev) => prev + 1)}
                                 whileHover={data.hasNext ? { scale: 1.03 } : {}}
                                 whileTap={data.hasNext ? { scale: 0.97 } : {}}
-                                className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[#e7e1f2] bg-white px-4 py-2 text-sm font-semibold text-gray-600 transition hover:border-[#ffccb9] hover:bg-[#fff7f2] hover:text-[#ff5f6d] disabled:cursor-not-allowed disabled:opacity-50"
+                                className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[#e7e1f2] bg-white px-4 py-2 text-sm font-semibold text-gray-600 transition hover:border-[#d9ccff] hover:bg-[#f5f2ff] hover:text-[#7c5cff] disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 Next
                                 <ChevronRight className="h-4 w-4" />
@@ -378,11 +342,9 @@ export function MyOrdersPage() {
         </div>
     );
 }
-
 /* ---------------------------------------------------------------------- */
 /* Status badge with pop animation                                         */
 /* ---------------------------------------------------------------------- */
-
 function StatusBadge({ status }: { status: string }) {
     const colors: Record<string, string> = {
         Pending: 'bg-yellow-100 text-yellow-700 border-yellow-200',
@@ -391,7 +353,6 @@ function StatusBadge({ status }: { status: string }) {
         Delivered: 'bg-green-100 text-green-700 border-green-200',
         Cancelled: 'bg-red-100 text-red-700 border-red-200',
     };
-
     return (
         <motion.span
             variants={badgeVariants}
@@ -404,11 +365,9 @@ function StatusBadge({ status }: { status: string }) {
         </motion.span>
     );
 }
-
 /* ---------------------------------------------------------------------- */
 /* Payment badge with pop animation                                        */
 /* ---------------------------------------------------------------------- */
-
 function PaymentBadge({ status }: { status: string | null }) {
     const colors: Record<string, string> = {
         Paid: 'bg-green-100 text-green-700 border-green-200',
@@ -416,12 +375,10 @@ function PaymentBadge({ status }: { status: string | null }) {
         Failed: 'bg-red-100 text-red-700 border-red-200',
         Refunded: 'bg-purple-100 text-purple-700 border-purple-200',
     };
-
     const label = status ?? 'Not paid';
     const colorClass = status
         ? colors[status] ?? 'bg-gray-100 text-gray-600 border-gray-200'
         : 'bg-gray-100 text-gray-600 border-gray-200';
-
     return (
         <motion.span
             variants={badgeVariants}
