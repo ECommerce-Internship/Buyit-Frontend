@@ -5,6 +5,7 @@ import {
     deleteProduct,
     uploadProductImage,
     importProducts,
+    importProductsForStore,
     importProductsFromSftp,
     generateProductContent,
 } from '../api/products';
@@ -129,6 +130,23 @@ export function useImportProducts(opts?: {
         mutationFn: (file: File) => importProducts(file),
         onSuccess: (result) => {
             qc.invalidateQueries({ queryKey: ['products'] });
+            opts?.onSuccess?.(result);
+        },
+        onError: (e) => opts?.onError?.(errMessage(e, 'Import failed.')),
+    });
+}
+
+// IMPORT EXCEL — store-scoped (seller). Same result shape as useImportProducts, but takes the
+// target storeId and refreshes the SELLER product list ('seller-products') the page reads from.
+export function useImportProductsForStore(opts?: {
+    onSuccess?: (result: ImportResult) => void;
+    onError?: (msg: string) => void;
+}) {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (vars: { storeId: number; file: File }) => importProductsForStore(vars.storeId, vars.file),
+        onSuccess: (result) => {
+            qc.invalidateQueries({ queryKey: ['seller-products'] });
             opts?.onSuccess?.(result);
         },
         onError: (e) => opts?.onError?.(errMessage(e, 'Import failed.')),

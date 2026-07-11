@@ -78,6 +78,17 @@ export async function importProducts(file: File): Promise<ImportResult> {
     return res.data;
 }
 
+// BULK-IMPORT products into ONE store, for a Seller (their own store) or Admin. Same multipart
+// shape and { addedCount, failedCount, errors[] } result as importProducts, but scoped to storeId.
+// The backend enforces that the caller owns that store (403 otherwise) and checks SKU uniqueness
+// per-store, so every imported product lands in this store.
+export async function importProductsForStore(storeId: number, file: File): Promise<ImportResult> {
+    const form = new FormData();
+    form.append('file', file);
+    const res = await axiosInstance.post<ImportResult>(`/api/v1/product/import/${storeId}`, form);
+    return res.data;
+}
+
 // TRIGGER an SFTP import. Unlike importProducts(), there is NO file to upload — the backend
 // already knows the configured SFTP path and pulls the spreadsheet itself. Returns the SAME
 // { addedCount, failedCount, errors[] } shape as the Excel import. Admin only.
