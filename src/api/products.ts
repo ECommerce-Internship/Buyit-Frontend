@@ -32,6 +32,27 @@ export async function fetchProducts(
     return res.data;
 }
 
+// One semantic-search hit: the product plus its cosine distance (0 = identical meaning).
+// Mirrors the backend's SemanticSearchResult record (camelCase over the wire).
+export interface SemanticHit {
+    product: ProductResponse;
+    distance: number;
+}
+
+// MEANING-BASED search (TB-156). Ranks APPROVED products by cosine similarity to `q`.
+// Returns a FLAT list, best match first — no server-side paging/category/price filters
+// (apply those client-side). `take` is clamped to 1..50 by the backend.
+export async function searchProductsSemantic(
+    q: string,
+    take = 50,
+): Promise<SemanticHit[]> {
+    const res = await axiosInstance.get<SemanticHit[]>(
+        '/api/v1/product/search/semantic',
+        { params: { q, take } },
+    );
+    return res.data;
+}
+
 // Fetch ONE product by id for the detail page.
 // NOTE: singular "/product/{id}" — the controller's [controller] route token is "Product".
 export async function fetchProductById(id: number): Promise<ProductResponse> {
