@@ -4,6 +4,7 @@ export interface StoreOrderItemResponse {
     storeOrderItemId: number;
     productId: number;
     productName: string;
+    imageUrl: string | null;
     unitPrice: number;
     quantity: number;
     lineTotal: number;
