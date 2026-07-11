@@ -50,6 +50,16 @@ axiosInstance.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+
+        // File uploads send a FormData body. The client sets a default 'application/json'
+        // Content-Type (above), which would override the multipart type and make the backend's
+        // IFormFile actions reject the request with 415. Delete it here so the browser sets
+        // 'multipart/form-data' WITH the required boundary token itself. Covers every FormData
+        // upload (Excel product import, product image upload) in one place.
+        if (config.data instanceof FormData) {
+            delete config.headers['Content-Type'];
+        }
+
         return config; // you MUST return config, or the request never goes out
     },
     (error) => Promise.reject(error),
