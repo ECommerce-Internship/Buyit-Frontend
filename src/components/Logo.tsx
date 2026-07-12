@@ -6,36 +6,32 @@ interface LogoProps {
     height?: number;
     /**
      * Where clicking the logo navigates. Default "/".
-     * Pass `null` to render the badge with no link (e.g. inside another link).
+     * Pass `null` to render the logo with no link (e.g. inside another link).
      */
     to?: string | null;
-    /** Extra classes applied to the badge wrapper. */
+    /** Extra classes applied to the image. */
     className?: string;
 }
 
 /**
- * The Buyit brand mark. The source artwork ships on its native near-black
- * background, so we sit it on a matching dark rounded "badge": the image's
- * rectangular edges blend into the badge, which keeps it looking clean on both
- * light pages (e.g. the auth screens) and dark sections (e.g. the landing nav).
+ * The Buyit brand mark. The source artwork is cropped tight with a transparent
+ * background, so it's rendered directly with no wrapping badge — it reads
+ * cleanly on both light pages (e.g. the auth screens) and dark sections
+ * (e.g. the landing nav) on its own.
  * Use this everywhere instead of dropping the <img> in by hand.
  */
 export default function Logo({ height = 36, to = '/', className = '' }: LogoProps) {
-    const badge = (
-        <span
-            className={`inline-flex items-center rounded-xl bg-[#0d0e14] px-3 py-1.5 ring-1 ring-white/10 ${className}`}
-        >
-            <img
-                src={logo}
-                alt="Buyit — Multi-Seller E-commerce Marketplace"
-                style={{ height }}
-                className="block w-auto select-none"
-                draggable={false}
-            />
-        </span>
+    const image = (
+        <img
+            src={logo}
+            alt="Buyit — Multi-Seller E-commerce Marketplace"
+            style={{ height }}
+            className={`block w-auto select-none ${className}`}
+            draggable={false}
+        />
     );
 
-    if (to === null) return badge;
+    if (to === null) return image;
 
     return (
         <Link
@@ -43,7 +39,7 @@ export default function Logo({ height = 36, to = '/', className = '' }: LogoProp
             aria-label="Buyit home"
             className="inline-flex rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
         >
-            {badge}
+            {image}
         </Link>
     );
 }
