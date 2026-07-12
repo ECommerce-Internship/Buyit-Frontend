@@ -1,7 +1,6 @@
 // src/components/Logo.tsx
 import { Link } from 'react-router-dom';
-import logo from '../assets/buyit-logo.webp';
-
+import logo from '../assets/buyit-logo.png';
 interface LogoProps {
     /** Pixel height of the wordmark image. Default 36. */
     height?: number;
