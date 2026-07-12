@@ -7,8 +7,7 @@ import axiosInstance from '../api/axiosInstance';
 import { registerSeller, becomeSeller } from '../api/stores';
 import { useAuth } from '../context/AuthContext';
 import type { AuthResponse } from '../types/auth';
-import buyitIcon from '../assets/buyit-icon.png';
-import buyitWordmark from '../assets/buyit-wordmark.png';
+import buyitLogo from '../assets/buyit-logo.png';
 
 interface Props {
   initialMode: AuthMode;
@@ -310,8 +309,7 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
                   <div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                              <img src={buyitIcon} alt="" aria-hidden style={{ height: 28, width: 'auto', display: 'block' }} />
-                              <img src={buyitWordmark} alt="Buyit" style={{ height: 19, width: 'auto', display: 'block' }} />
+                              <img src={buyitLogo} alt="Buyit" style={{ height: 34, width: 'auto', display: 'block' }} />
                           </div>
                           <Hoverable as="button" onClick={onClose} aria-label="Close"
                               style={{ width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, color: 'rgba(255,255,255,0.7)', cursor: 'pointer' }}
@@ -391,11 +389,10 @@ export function AuthModal({ initialMode, initialRole, onClose }: Props) {
                   </div>
               ) : (
                   <div>
-            {/* Header */}
+           {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                <img src={buyitIcon} alt="" aria-hidden style={{ height: 28, width: 'auto', display: 'block' }} />
-                <img src={buyitWordmark} alt="Buyit" style={{ height: 19, width: 'auto', display: 'block' }} />
+                <img src={buyitLogo} alt="Buyit" style={{ height: 34, width: 'auto', display: 'block' }} />
               </div>
               <Hoverable as="button" onClick={onClose} aria-label="Close"
                 style={{ width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, color: 'rgba(255,255,255,0.7)', cursor: 'pointer' }}
