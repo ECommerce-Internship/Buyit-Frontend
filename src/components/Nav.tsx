@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Hoverable } from './ui/Hoverable';
 import { useAuthModal } from '../context/AuthModalContext';
-import buyitIcon from '../assets/buyit-icon.png';
-import buyitWordmark from '../assets/buyit-wordmark.png';
+import buyitLogo from '../assets/buyit-logo.png';
 
 const navLink = (extra = {}) => ({
     textDecoration: 'none', fontSize: 'clamp(11.5px, 1.5vw, 14.5px)', fontWeight: 500,
@@ -33,12 +32,10 @@ export function Nav() {
             }}>
                 <a href="#top" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', flexShrink: 0 }}>
                     <img
-                        src={buyitIcon}
-                        alt=""
-                        aria-hidden
-                        style={{ height: 'clamp(26px, 3vw, 34px)', width: 'auto', display: 'block', filter: 'drop-shadow(0 0 12px rgba(139,92,246,0.5))' }}
+                        src={buyitLogo}
+                        alt="Buyit"
+                        style={{ height: 'clamp(34px, 4vw, 44px)', width: 'auto', display: 'block' }}
                     />
-                    <img src={buyitWordmark} alt="Buyit" style={{ height: 'clamp(18px, 2vw, 24px)', width: 'auto', display: 'block' }} />
                 </a>
 
                 <div className="hidden md:flex" style={{ alignItems: 'center', gap: 'clamp(10px, 2vw, 30px)' }}>
